@@ -1,0 +1,19 @@
+{
+  "name": "١٨٠ يوم — تتبّع استحقاق الأعمال الممتازة",
+  "short_name": "١٨٠ يوم",
+  "description": "مساعدك الذكي لتتبّع أيام العمل الفعلية واستحقاق مكافأة الأعمال الممتازة لموظفي الحكومة في الكويت.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0A1A2F",
+  "theme_color": "#0A1A2F",
+  "categories": ["productivity", "utilities"],
+  "icons": [
+    { "src": "assets/brand/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/brand/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/brand/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
