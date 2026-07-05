@@ -4,6 +4,16 @@
 
 A mobile-first web app that helps Kuwaiti government employees track their actual working days toward the Civil Service Commission's 180-day threshold for the "Excellent Performance" bonus.
 
+## 🔗 جرّب التطبيق مباشرة / Live app
+
+**https://bowaleedpc90-cell.github.io/my-first-MVP/**
+
+📱 **ثبّته كتطبيق على جوالك:** افتح الرابط ثم:
+- **آيفون (Safari):** زر المشاركة ⬆️ ← «أضف إلى الشاشة الرئيسية».
+- **أندرويد (Chrome):** القائمة ⋮ ← «تثبيت التطبيق / إضافة إلى الشاشة الرئيسية».
+
+بياناتك تُحفظ على جهازك فقط، ولا تحتاج تسجيل دخول.
+
 📄 Full proposal: [`docs/project-proposal.md`](docs/project-proposal.md)
 
 ## ✨ What this MVP does
@@ -11,10 +21,11 @@ A mobile-first web app that helps Kuwaiti government employees track their actua
 - **Dynamic dashboard** — circular counter of completed working days vs. target, countdown of remaining days, and a color-coded safety zone (green / yellow / red) computed from how many working days are still achievable this year.
 - **Leave engine** — one-tap quick-add for annual (دورية), sick (مرضية), emergency (طارئة), and unpaid leaves; deductions are calculated automatically and only count leave days that fall on actual working days.
 - **Hourly permissions (استئذانات)** — hours accumulate per month; anything above the configurable monthly allowance converts automatically into deducted days.
-- **Kuwait calendar** — Fridays/Saturdays excluded automatically; official 2026 holidays pre-loaded (Islamic dates are estimates and editable from settings).
+- **Kuwait calendar** — Fridays/Saturdays excluded automatically; the official 2026 Kuwait public holidays (per Civil Service Commission announcements) are pre-loaded and editable from settings (Hijri dates remain subject to moon-sighting).
 - **Profiles** — admin (180 days) vs. teaching (135 days) presets, configurable target, daily hours, and permission allowance.
+- **Installable (PWA)** — a web app manifest lets employees add it to their phone home screen with the X Star icon for an app-like experience.
 
-Data is stored in the browser's `localStorage` — no account needed for the MVP.
+The app starts empty — no sample data. Each employee enters only their own leaves and permissions, stored in the browser's `localStorage`. No account needed for the MVP.
 
 ## 🚀 Run it
 
