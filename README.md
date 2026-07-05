@@ -52,6 +52,10 @@ docs/project-proposal.md  Original bilingual proposal
 2. **Supabase backend:** move `engine.js` logic + the proposal's `profiles` / `leaves` schema to Supabase with auth, replacing `localStorage`.
 3. **Closed beta:** 20–30 employees across ministries to validate calculations against official records.
 
+## 🏢 Developed by
+
+**X Star Software** — [xstarkw.com](https://xstarkw.com)
+
 ## ⚠️ Disclaimer
 
 نسخة تجريبية — الأرقام استرشادية ولا تغني عن السجلات الرسمية لديوان الخدمة المدنية.
