@@ -18,14 +18,24 @@ A mobile-first web app that helps Kuwaiti government employees track their actua
 
 ## ✨ What this MVP does
 
-- **Dynamic dashboard** — circular counter of completed working days vs. target, countdown of remaining days, and a color-coded safety zone (green / yellow / red) computed from how many working days are still achievable this year.
-- **Leave engine** — one-tap quick-add for annual (دورية), sick (مرضية), emergency (طارئة), and unpaid leaves; deductions are calculated automatically and only count leave days that fall on actual working days.
-- **Hourly permissions (استئذانات)** — hours accumulate per month; anything above the configurable monthly allowance converts automatically into deducted days.
-- **Kuwait calendar** — Fridays/Saturdays excluded automatically; the official 2026 Kuwait public holidays (per Civil Service Commission announcements) are pre-loaded and editable from settings (Hijri dates remain subject to moon-sighting).
-- **Profiles** — admin (180 days) vs. teaching (135 days) presets, configurable target, daily hours, and permission allowance.
-- **Installable (PWA)** — a web app manifest lets employees add it to their phone home screen with the X Star icon for an app-like experience.
+- **Dynamic dashboard** — circular counter with completed days, target, **percentage of goal**, and a color-coded status (green safe / yellow warning / red danger). A status card shows the **estimated safety buffer** and a "how we calculated it" explainer with the live equation (available − required = buffer).
+- **Four stat cards** — available working days, days remaining to target, safety buffer, and this month's permission usage as `used / limit hours` and `used / limit times`.
+- **First-run onboarding** — sets work type (admin morning/evening, shifts, teaching, custom), annual target (180 default for admin, not forced for shifts/teaching), weekend days, and ministry/category.
+- **Quick add** — annual / sick / emergency / unpaid / permission / custom. Every action opens a small sheet (date defaults to today, single day or range), shows a live deduction preview, and confirms with a toast + **undo**. Every record can be **edited, deleted (with confirm), or undone**.
+- **Monthly calendar** — color-coded days (workday, weekend rest, official holiday, leave, permission); tap any day for its detail (is it a workday? does it count? why excluded?).
+- **Leave simulator** — try a future leave and see deducted days + safety buffer before/after + new status, without saving until you approve.
+- **Smart alerts** — contextual cards when the buffer drops below 20 / 10 days, the target becomes unreachable, or the monthly permission limit is exceeded.
+- **Report export** — PDF/print or shareable text summary; **privacy page** with app PIN lock and full data deletion.
+- **Kuwait calendar** — Fridays/Saturdays excluded automatically; official 2026 Kuwait public holidays (per CSC announcements) pre-loaded and editable (Hijri dates subject to moon-sighting).
+- **Installable (PWA)** — add to the phone home screen with the X Star icon for an app-like experience.
+
+The safety-buffer status thresholds are: **safe ≥ 20**, **warning 10–19**, **danger < 20 unreachable or < 10** (configurable).
 
 The app starts empty — no sample data. Each employee enters only their own leaves and permissions, stored in the browser's `localStorage`. No account needed for the MVP.
+
+## 🗄️ Backend (Phase 2)
+
+[`docs/supabase-schema.sql`](docs/supabase-schema.sql) contains the target Supabase/PostgreSQL schema — `profiles`, `leave_entries`, `public_holidays`, `calculation_snapshots`, `settings` — with **Row Level Security** so each user sees only their own data. The calculation logic in `js/engine.js` is pure and DOM-free, ready to port to a Supabase Edge Function.
 
 ## 🚀 Run it
 
