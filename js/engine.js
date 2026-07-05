@@ -1,15 +1,26 @@
 /**
  * "180 Days" calculation engine — pure functions, no DOM access.
- * Designed so the same logic can later run inside a Supabase Edge Function.
+ * Portable to a Supabase Edge Function later.
  *
  * Conventions:
  * - Dates are ISO strings "YYYY-MM-DD" (local, no timezone math needed).
- * - Weekend in Kuwait: Friday (5) and Saturday (6).
- * - A "working day" is a weekday that is not an official holiday.
- * - Leave days only deduct when they fall on a working day.
+ * - Weekend is configurable (default Friday + Saturday for Kuwait admin).
+ * - A "working day" is a non-weekend day that is not an official holiday.
+ * - Leave days only deduct when they fall on a working day; overlaps count once.
+ *
+ * Last update to calculation rules: 2026.
  */
 
-const WEEKEND_DAYS = [5, 6]; // Friday, Saturday
+export const RULES_LAST_UPDATED = 2026;
+
+// Status thresholds (in safety-buffer working days). Editable / configurable.
+export const STATUS_THRESHOLDS = { safe: 20, warning: 10 };
+
+const DAY_NAME_TO_INDEX = {
+  sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6,
+};
+
+/* --------------------------------------------------------------- date utils */
 
 export function toDate(iso) {
   const [y, m, d] = iso.split("-").map(Number);
@@ -23,12 +34,10 @@ export function toISO(date) {
   return `${y}-${m}-${d}`;
 }
 
-export function isWeekend(iso) {
-  return WEEKEND_DAYS.includes(toDate(iso).getDay());
-}
-
-export function isWorkingDay(iso, holidaySet) {
-  return !isWeekend(iso) && !holidaySet.has(iso);
+export function addDaysISO(iso, n) {
+  const d = toDate(iso);
+  d.setDate(d.getDate() + n);
+  return toISO(d);
 }
 
 /** Iterate ISO dates from startISO to endISO inclusive. */
@@ -39,132 +48,216 @@ export function* dateRange(startISO, endISO) {
   }
 }
 
-/** Count working days in [startISO, endISO] inclusive. */
-export function countWorkingDays(startISO, endISO, holidaySet) {
-  if (toDate(startISO) > toDate(endISO)) return 0;
+export function weekendIndexSet(weekendDays) {
+  const list = (weekendDays && weekendDays.length ? weekendDays : ["friday", "saturday"]);
+  return new Set(list.map((d) => (typeof d === "number" ? d : DAY_NAME_TO_INDEX[d])));
+}
+
+export function isWeekend(iso, weekendDays) {
+  return weekendIndexSet(weekendDays).has(toDate(iso).getDay());
+}
+
+export function isWorkday(iso, weekendSet, holidaySet) {
+  return !weekendSet.has(toDate(iso).getDay()) && !holidaySet.has(iso);
+}
+
+/* -------------------------------------------------------- working-day counts */
+
+export function totalWorkdaysInYear(year, weekendDays, publicHolidays) {
+  const ws = weekendIndexSet(weekendDays);
+  const hs = new Set(publicHolidays);
   let count = 0;
-  for (const iso of dateRange(startISO, endISO)) {
-    if (isWorkingDay(iso, holidaySet)) count++;
+  for (const iso of dateRange(`${year}-01-01`, `${year}-12-31`)) {
+    if (isWorkday(iso, ws, hs)) count++;
+  }
+  return count;
+}
+
+/** Inclusive count of working days in [startDate, endDate]. */
+export function workdaysBetween(startDate, endDate, weekendDays, publicHolidays) {
+  if (toDate(startDate) > toDate(endDate)) return 0;
+  const ws = weekendIndexSet(weekendDays);
+  const hs = new Set(publicHolidays);
+  let count = 0;
+  for (const iso of dateRange(startDate, endDate)) {
+    if (isWorkday(iso, ws, hs)) count++;
   }
   return count;
 }
 
 /**
- * Expand day-based leaves into the set of working days they consume.
- * Overlapping leaves count once. Weekend/holiday days inside a leave
- * range do not deduct.
+ * Expand day-based leave entries into the SET of working days they consume.
+ * Overlapping ranges count once; weekend/holiday days inside a range are ignored.
  */
-export function leaveWorkingDays(leaves, holidaySet) {
+export function calculateExcludedWorkdays(leaveEntries, weekendDays, publicHolidays) {
+  const ws = weekendIndexSet(weekendDays);
+  const hs = new Set(publicHolidays);
   const days = new Set();
-  for (const leave of leaves) {
-    for (const iso of dateRange(leave.start_date, leave.end_date)) {
-      if (isWorkingDay(iso, holidaySet)) days.add(iso);
+  for (const leave of leaveEntries) {
+    if (!leave.start_date) continue;
+    const end = leave.end_date || leave.start_date;
+    for (const iso of dateRange(leave.start_date, end)) {
+      if (isWorkday(iso, ws, hs)) days.add(iso);
     }
   }
-  return days;
+  return days; // a Set of ISO date strings
+}
+
+/* --------------------------------------------------------------- permissions */
+
+/** Usage of hourly permissions within a given "YYYY-MM" month. */
+export function monthlyPermissionUsage(permissions, ym) {
+  let hours = 0, count = 0;
+  for (const p of permissions) {
+    if ((p.date || "").slice(0, 7) === ym) { hours += Number(p.hours) || 0; count++; }
+  }
+  return { hours, count };
 }
 
 /**
- * Convert hourly permissions into deducted days.
- * Per month, hours above `monthlyAllowanceHours` are excess; the yearly
- * sum of excess hours is divided by `dailyWorkHours` (floored) to get
- * full deducted days.
- *
- * NOTE: allowance/limits must be verified against current CSC rules
- * (roadmap Phase 1) — both parameters are user-configurable settings.
+ * Convert hourly permissions into deducted working days.
+ * Per month, hours above `monthlyLimitHours` are excess; the yearly sum of
+ * excess hours divided by `dailyWorkHours` (floored) gives full deducted days.
  */
-export function permissionDeduction(permissions, { monthlyAllowanceHours, dailyWorkHours }) {
+export function permissionDeductedDays(permissions, monthlyLimitHours, dailyWorkHours) {
   const byMonth = {};
   for (const p of permissions) {
-    const month = p.date.slice(0, 7); // "YYYY-MM"
-    byMonth[month] = (byMonth[month] || 0) + Number(p.hours);
+    const m = (p.date || "").slice(0, 7);
+    if (!m) continue;
+    byMonth[m] = (byMonth[m] || 0) + (Number(p.hours) || 0);
   }
   let excessHours = 0;
-  for (const hours of Object.values(byMonth)) {
-    excessHours += Math.max(0, hours - monthlyAllowanceHours);
-  }
+  for (const h of Object.values(byMonth)) excessHours += Math.max(0, h - monthlyLimitHours);
   const deductedDays = dailyWorkHours > 0 ? Math.floor(excessHours / dailyWorkHours) : 0;
   return { excessHours, deductedDays, byMonth };
 }
 
-/**
- * Main dashboard computation.
- *
- * @param {object} opts
- * @param {number} opts.year          calendar year being tracked
- * @param {string} opts.todayISO      today's date
- * @param {number} opts.targetDays    e.g. 180 admin / 135 teaching
- * @param {string[]} opts.holidays    ISO dates of official holidays
- * @param {Array}  opts.leaves        [{entry_type, start_date, end_date}]
- * @param {Array}  opts.permissions   [{date, hours}]
- * @param {number} opts.monthlyAllowanceHours
- * @param {number} opts.dailyWorkHours
- */
-export function computeStats(opts) {
-  const {
-    year, todayISO, targetDays, holidays, leaves, permissions,
-    monthlyAllowanceHours, dailyWorkHours,
-  } = opts;
+/* -------------------------------------------------------------- derived math */
 
-  const holidaySet = new Set(holidays);
+export function calculateRemainingToTarget(targetDays, completedDays) {
+  return Math.max(0, targetDays - completedDays);
+}
+
+export function calculateSafetyBuffer(availableWorkDaysUntilEndOfYear, remainingToTarget) {
+  return availableWorkDaysUntilEndOfYear - remainingToTarget;
+}
+
+export function calculateStatus(safetyBuffer, thresholds = STATUS_THRESHOLDS) {
+  if (safetyBuffer >= thresholds.safe) return "safe";
+  if (safetyBuffer >= thresholds.warning) return "warning";
+  return "danger";
+}
+
+/* ------------------------------------------------------------ orchestration */
+
+/**
+ * Full dashboard computation.
+ *
+ * @param {object} o
+ * @param {number} o.year
+ * @param {string} o.todayISO
+ * @param {number} o.targetDays
+ * @param {string[]} o.weekendDays          e.g. ["friday","saturday"]
+ * @param {string[]} o.holidays             ISO dates
+ * @param {Array}  o.leaves                 [{entry_type,start_date,end_date}]
+ * @param {Array}  o.permissions            [{date,hours}]
+ * @param {number} o.monthlyPermHours       monthly hours allowance (e.g. 12)
+ * @param {number} o.monthlyPermCount       monthly count allowance (e.g. 4)
+ * @param {number} o.dailyWorkHours
+ * @param {object} [o.thresholds]
+ */
+export function computeStats(o) {
+  const {
+    year, todayISO, targetDays, weekendDays, holidays, leaves, permissions,
+    monthlyPermHours = 12, monthlyPermCount = 4, dailyWorkHours = 7,
+    thresholds = STATUS_THRESHOLDS,
+  } = o;
+
+  const ws = weekendIndexSet(weekendDays);
+  const hs = new Set(holidays);
   const yearStart = `${year}-01-01`;
   const yearEnd = `${year}-12-31`;
 
-  // Clamp "today" into the tracked year.
   let today = todayISO;
   if (toDate(today) < toDate(yearStart)) today = yearStart;
   if (toDate(today) > toDate(yearEnd)) today = yearEnd;
 
-  const leaveDays = leaveWorkingDays(leaves, holidaySet);
-  const perm = permissionDeduction(permissions, { monthlyAllowanceHours, dailyWorkHours });
+  const leaveDays = calculateExcludedWorkdays(leaves, weekendDays, holidays);
+  const perm = permissionDeductedDays(permissions, monthlyPermHours, dailyWorkHours);
 
-  // Days actually worked so far: working days elapsed minus leaves taken
-  // on those days, minus days lost to accumulated permissions.
-  let elapsedWorking = 0;
-  let elapsedLeave = 0;
+  // Elapsed working days (year start .. today, inclusive) minus leaves taken.
+  let elapsedWorking = 0, elapsedLeave = 0;
   for (const iso of dateRange(yearStart, today)) {
-    if (!isWorkingDay(iso, holidaySet)) continue;
+    if (!isWorkday(iso, ws, hs)) continue;
     elapsedWorking++;
     if (leaveDays.has(iso)) elapsedLeave++;
   }
   const completedDays = Math.max(0, elapsedWorking - elapsedLeave - perm.deductedDays);
 
-  // Future capacity: remaining working days after today, minus leaves
-  // already scheduled in the future.
-  let futureWorking = 0;
-  let futureLeave = 0;
+  // Future capacity (day after today .. year end) minus scheduled future leaves.
+  let futureWorking = 0, futureLeave = 0;
   if (toDate(today) < toDate(yearEnd)) {
-    const tomorrow = toISO(new Date(toDate(today).getTime() + 86400000));
-    for (const iso of dateRange(tomorrow, yearEnd)) {
-      if (!isWorkingDay(iso, holidaySet)) continue;
+    for (const iso of dateRange(addDaysISO(today, 1), yearEnd)) {
+      if (!isWorkday(iso, ws, hs)) continue;
       futureWorking++;
       if (leaveDays.has(iso)) futureLeave++;
     }
   }
+  const availableWorkDays = futureWorking - futureLeave;
 
-  const remainingNeeded = Math.max(0, targetDays - completedDays);
-  const maxAchievable = completedDays + futureWorking - futureLeave;
-  const margin = maxAchievable - targetDays; // spare leave days before the bonus is lost
-
-  let zone; // green: safe, yellow: careful, red: target unreachable
-  if (margin < 0) zone = "red";
-  else if (margin < 10) zone = "yellow";
-  else zone = "green";
-
+  const remainingToTarget = calculateRemainingToTarget(targetDays, completedDays);
+  const safetyBuffer = calculateSafetyBuffer(availableWorkDays, remainingToTarget);
+  const maxAchievable = completedDays + availableWorkDays;
+  const reachable = maxAchievable >= targetDays;
   const achieved = completedDays >= targetDays;
 
+  let status = calculateStatus(safetyBuffer, thresholds);
+  if (!reachable) status = "danger";
+  if (achieved) status = "safe";
+
+  const percent = targetDays > 0 ? Math.round((completedDays / targetDays) * 100) : 0;
+
+  // Current-month permission usage.
+  const ym = today.slice(0, 7);
+  const permMonth = monthlyPermissionUsage(permissions, ym);
+
   return {
+    year,
     completedDays,
     targetDays,
-    remainingNeeded,
-    futureWorking: futureWorking - futureLeave,
+    percent,
+    availableWorkDays,
+    remainingToTarget,
+    safetyBuffer,
     maxAchievable,
-    margin,
-    zone: achieved ? "green" : zone,
+    reachable,
     achieved,
+    status,
     elapsedWorking,
-    elapsedLeave,
+    totalLeaveWorkdays: leaveDays.size,
+    permMonthHours: permMonth.hours,
+    permMonthCount: permMonth.count,
+    monthlyPermHours,
+    monthlyPermCount,
     permissionExcessHours: perm.excessHours,
     permissionDeductedDays: perm.deductedDays,
+    thresholds,
+  };
+}
+
+/**
+ * Simulate adding a future leave and report the effect on the safety buffer.
+ * Does NOT mutate any stored data.
+ */
+export function simulateLeave(o, leave) {
+  const before = computeStats(o);
+  const after = computeStats({ ...o, leaves: [...o.leaves, leave] });
+  return {
+    workdaysDeducted: Math.max(0, before.availableWorkDays - after.availableWorkDays),
+    bufferBefore: before.safetyBuffer,
+    bufferAfter: after.safetyBuffer,
+    statusBefore: before.status,
+    statusAfter: after.status,
+    reachableAfter: after.reachable,
   };
 }
