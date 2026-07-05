@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>١٨٠ يوم — مساعدك لتتبع استحقاق الأعمال الممتازة</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-zone="green">
+  <div class="app">
+
+    <header>
+      <h1>١٨٠ يوم <small>تتبع استحقاق الأعمال الممتازة</small></h1>
+      <button class="icon-btn" id="btn-settings" aria-label="الإعدادات">⚙️</button>
+    </header>
+
+    <!-- dashboard -->
+    <section class="card">
+      <div class="greeting" id="greeting">مرحباً بك 👋</div>
+      <div class="year">السنة الميلادية: <span id="year-label"></span></div>
+
+      <div class="ring-wrap">
+        <div class="ring">
+          <svg width="200" height="200" viewBox="0 0 200 200">
+            <circle class="track" cx="100" cy="100" r="84"></circle>
+            <circle class="bar" id="ring-progress" cx="100" cy="100" r="84"></circle>
+          </svg>
+          <div class="ring-label">
+            <strong id="ring-count">0</strong>
+            <span id="ring-target">من 180 يوم</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="zone-banner">
+        <strong id="zone-title"></strong>
+        <small id="zone-hint"></small>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><strong id="stat-remaining">0</strong><small>يوم متبقٍ لتحقيق الهدف</small></div>
+        <div class="stat"><strong id="stat-capacity">0</strong><small>يوم عمل متاح حتى نهاية السنة</small></div>
+        <div class="stat"><strong id="stat-margin">0</strong><small>هامش الأمان (أيام يمكن التغيّب بها)</small></div>
+        <div class="stat"><strong id="stat-perm">0</strong><small>ساعات استئذان زائدة عن الحد</small></div>
+      </div>
+    </section>
+
+    <!-- quick add -->
+    <section class="quick">
+      <h2>تسجيل سريع — بضغطة واحدة</h2>
+      <div class="quick-grid">
+        <button data-leave="annual"><span>🌴</span>دورية</button>
+        <button data-leave="sick"><span>🤒</span>مرضية</button>
+        <button data-leave="emergency"><span>⚡</span>طارئة</button>
+        <button data-leave="unpaid"><span>📋</span>بدون راتب</button>
+        <button id="btn-perm"><span>⏱️</span>استئذان</button>
+      </div>
+    </section>
+
+    <!-- log -->
+    <section class="log">
+      <h2>سجل الإجازات والاستئذانات</h2>
+      <ul id="log-list"></ul>
+    </section>
+
+  </div>
+
+  <!-- leave sheet -->
+  <div class="sheet" id="sheet-leave">
+    <form class="sheet-panel" id="form-leave">
+      <h3 id="leave-sheet-title">إجازة</h3>
+      <input type="hidden" id="leave-type" value="annual" />
+      <div class="field-row">
+        <div class="field">
+          <label for="leave-start">من تاريخ</label>
+          <input type="date" id="leave-start" required />
+        </div>
+        <div class="field">
+          <label for="leave-end">إلى تاريخ</label>
+          <input type="date" id="leave-end" />
+        </div>
+      </div>
+      <button class="btn btn-primary" type="submit">حفظ الإجازة</button>
+      <button class="btn btn-ghost" type="button" data-close>إلغاء</button>
+      <p class="note">أيام الجمعة والسبت والعطل الرسمية داخل فترة الإجازة لا تُخصم تلقائياً.</p>
+    </form>
+  </div>
+
+  <!-- permission sheet -->
+  <div class="sheet" id="sheet-perm">
+    <form class="sheet-panel" id="form-perm">
+      <h3>تسجيل استئذان</h3>
+      <div class="field-row">
+        <div class="field">
+          <label for="perm-date">التاريخ</label>
+          <input type="date" id="perm-date" required />
+        </div>
+        <div class="field">
+          <label for="perm-hours">عدد الساعات</label>
+          <input type="number" id="perm-hours" min="0.5" max="8" step="0.5" required />
+        </div>
+      </div>
+      <button class="btn btn-primary" type="submit">حفظ الاستئذان</button>
+      <button class="btn btn-ghost" type="button" data-close>إلغاء</button>
+      <p class="note">تُجمَّع ساعات الاستئذان شهرياً، وما يتجاوز الحد المسموح يتحوّل تلقائياً إلى أيام خصم من الرصيد.</p>
+    </form>
+  </div>
+
+  <!-- settings sheet -->
+  <div class="sheet" id="sheet-settings">
+    <form class="sheet-panel" id="form-settings">
+      <h3>الإعدادات</h3>
+      <div class="field">
+        <label for="set-name">الاسم</label>
+        <input type="text" id="set-name" placeholder="اسمك الكريم" />
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="set-type">الجهة / الفئة</label>
+          <select id="set-type">
+            <option value="admin">إداري (180 يوم)</option>
+            <option value="teaching">تعليمي (135 يوم)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="set-target">الهدف (أيام)</label>
+          <input type="number" id="set-target" min="1" max="366" />
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="set-hours">ساعات الدوام اليومي</label>
+          <input type="number" id="set-hours" min="1" max="12" step="0.5" />
+        </div>
+        <div class="field">
+          <label for="set-allowance">حد الاستئذان الشهري (ساعات)</label>
+          <input type="number" id="set-allowance" min="0" max="40" step="0.5" />
+        </div>
+      </div>
+      <button class="btn btn-primary" type="submit">حفظ الإعدادات</button>
+      <button class="btn btn-ghost" type="button" id="btn-holidays">🗓️ إدارة العطل الرسمية</button>
+      <button class="btn btn-danger" type="button" id="btn-reset">حذف جميع البيانات</button>
+      <button class="btn btn-ghost" type="button" data-close>إغلاق</button>
+      <p class="note">⚠️ نسخة تجريبية (MVP): تُحفظ البيانات على جهازك فقط. تأكد من مطابقة الحدود والقواعد مع قرارات ديوان الخدمة المدنية.</p>
+    </form>
+  </div>
+
+  <!-- holidays sheet -->
+  <div class="sheet" id="sheet-holidays">
+    <div class="sheet-panel">
+      <h3>العطل الرسمية</h3>
+      <form id="form-holiday">
+        <div class="field-row">
+          <div class="field">
+            <label for="holiday-date">التاريخ</label>
+            <input type="date" id="holiday-date" required />
+          </div>
+          <div class="field">
+            <label for="holiday-name">الاسم</label>
+            <input type="text" id="holiday-name" placeholder="مثال: عيد الفطر" />
+          </div>
+        </div>
+        <button class="btn btn-primary" type="submit">إضافة عطلة</button>
+      </form>
+      <ul id="holiday-list" style="margin-top:14px"></ul>
+      <button class="btn btn-ghost" type="button" data-close>إغلاق</button>
+      <p class="note">التواريخ الهجرية (الأعياد) تقديرية — عدّلها عند صدور الإعلان الرسمي.</p>
+    </div>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
