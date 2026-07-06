@@ -1,19 +1,19 @@
 {
-  "name": "١٨٠ يوم — تتبّع استحقاق الأعمال الممتازة",
+  "name": "١٨٠ يوم - تابع إنجازك بثقة",
   "short_name": "١٨٠ يوم",
-  "description": "مساعدك الذكي لتتبّع أيام العمل الفعلية واستحقاق مكافأة الأعمال الممتازة لموظفي الحكومة في الكويت.",
-  "lang": "ar",
+  "description": "منصة بسيطة لمتابعة أيام العمل واستحقاق الأعمال الممتازة.",
+  "lang": "ar-KW",
   "dir": "rtl",
-  "start_url": "./",
-  "scope": "./",
+  "start_url": "/my-first-MVP/",
+  "scope": "/my-first-MVP/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0A1A2F",
-  "theme_color": "#0A1A2F",
+  "background_color": "#f4f6fa",
+  "theme_color": "#16a34a",
   "categories": ["productivity", "utilities"],
   "icons": [
-    { "src": "assets/brand/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "assets/brand/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "assets/brand/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "assets/brand/app-180-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/brand/app-180-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/brand/app-180-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

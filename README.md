@@ -20,14 +20,14 @@ A mobile-first web app that helps Kuwaiti government employees track their actua
 
 - **Dynamic dashboard** — circular counter with completed days, target, **percentage of goal**, and a color-coded status (green safe / yellow warning / red danger). A status card shows the **estimated safety buffer** and a "how we calculated it" explainer with the live equation (available − required = buffer).
 - **Four stat cards** — available working days, days remaining to target, safety buffer, and this month's permission usage as `used / limit hours` and `used / limit times`.
-- **First-run onboarding** — sets work type (admin morning/evening, shifts, teaching, custom), annual target (180 default for admin, not forced for shifts/teaching), weekend days, and ministry/category.
+- **First-run onboarding (2 steps)** — step 1 sets work type (admin morning/evening, shifts, teaching, custom), annual target (180 default for admin, not forced for shifts/teaching), weekend days, and ministry/category. Step 2 lets the user enter this year's past leaves and absences once (permissions not needed), with a live counter so the completed-days number is accurate from the very first open.
 - **Quick add** — annual / sick / emergency / unpaid / permission / custom. Every action opens a small sheet (date defaults to today, single day or range), shows a live deduction preview, and confirms with a toast + **undo**. Every record can be **edited, deleted (with confirm), or undone**.
 - **Monthly calendar** — color-coded days (workday, weekend rest, official holiday, leave, permission); tap any day for its detail (is it a workday? does it count? why excluded?).
 - **Leave simulator** — try a future leave and see deducted days + safety buffer before/after + new status, without saving until you approve.
 - **Smart alerts** — contextual cards when the buffer drops below 20 / 10 days, the target becomes unreachable, or the monthly permission limit is exceeded.
 - **Report export** — PDF/print or shareable text summary; **privacy page** with app PIN lock and full data deletion.
 - **Kuwait calendar** — Fridays/Saturdays excluded automatically; official 2026 Kuwait public holidays (per CSC announcements) pre-loaded and editable (Hijri dates subject to moon-sighting).
-- **Installable (PWA)** — add to the phone home screen with the X Star icon for an app-like experience.
+- **Installable (PWA)** — add to the phone home screen and it appears as an app named **"١٨٠ يوم"** with a clean green ١٨٠ icon (standard + maskable). A short intro splash ("كل يوم يقربك للامتياز") greets first-time users; X Star stays as a subtle signature in the header and footer.
 
 The safety-buffer status thresholds are: **safe ≥ 20**, **warning 10–19**, **danger < 20 unreachable or < 10** (configurable).
 
