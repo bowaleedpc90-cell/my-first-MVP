@@ -5,12 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>١٨٠ يوم — مساعدك لتتبع استحقاق الأعمال الممتازة</title>
   <meta name="description" content="تتبّع أيام عملك الفعلية واضمن استحقاق مكافأة الأعمال الممتازة لموظفي الحكومة في الكويت — بدون أوراق." />
-  <link rel="icon" type="image/png" href="assets/brand/icon-192.png" />
-  <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" href="assets/brand/app-180-192.png" />
+  <link rel="apple-touch-icon" href="assets/brand/app-180-apple.png" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <meta name="theme-color" content="#0A1A2F" />
+  <meta name="theme-color" content="#16a34a" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="١٨٠ يوم" />
 
   <!-- Open Graph / social sharing -->
@@ -39,6 +40,17 @@
       <input type="password" id="lock-input" inputmode="numeric" maxlength="8" autocomplete="off" />
       <p class="lock-error" id="lock-error" hidden>الرمز غير صحيح</p>
       <button class="btn btn-primary" id="lock-unlock">فتح</button>
+    </div>
+  </div>
+
+  <!-- ===== intro splash (first open) ===== -->
+  <div class="intro-screen" id="intro-screen" hidden>
+    <div class="intro-box">
+      <img src="assets/brand/app-180-192.png" alt="١٨٠ يوم" width="76" height="76" />
+      <h2>كل يوم يقربك للامتياز</h2>
+      <p>تابع أيامك بسهولة وخل الحسبة أوضح.</p>
+      <button class="btn btn-primary" id="intro-start">ابدأ المتابعة</button>
+      <span class="intro-sign">تطوير X STAR SOFTWARE</span>
     </div>
   </div>
 
@@ -80,6 +92,12 @@
           <small id="zone-hint"></small>
           <button class="link-btn" id="btn-how">كيف حسبناها؟</button>
         </div>
+      </div>
+
+      <!-- reassurance card -->
+      <div class="reassure-card">
+        <span>🌱</span>
+        <p>تابع استحقاقك بثقة — الحسبة تقديرية وتساعدك على تنظيم أيامك.</p>
       </div>
 
       <!-- smart alerts -->
