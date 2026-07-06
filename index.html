@@ -268,9 +268,10 @@
           <label for="onb-leave-type">النوع</label>
           <select id="onb-leave-type"></select>
         </div>
-        <div class="field-row">
-          <div class="field"><label for="onb-leave-start">من تاريخ</label><input type="date" id="onb-leave-start" /></div>
-          <div class="field"><label for="onb-leave-end">إلى تاريخ</label><input type="date" id="onb-leave-end" /></div>
+        <div class="field">
+          <label>حدد الفترة (اختر يوم البداية ثم يوم النهاية)</label>
+          <div class="rcal" id="onb-rcal"></div>
+          <p class="rcal-summary" id="onb-rcal-summary"></p>
         </div>
         <p class="preview" id="onb-leave-preview"></p>
         <button type="button" class="btn btn-ghost" id="onb-leave-add">＋ أضف للسجل</button>
