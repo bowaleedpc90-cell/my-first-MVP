@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>١٨٠ يوم — مساعدك لتتبع استحقاق الأعمال الممتازة</title>
+  <meta name="description" content="تتبّع أيام عملك الفعلية واضمن استحقاق مكافأة الأعمال الممتازة لموظفي الحكومة في الكويت — بدون أوراق." />
+  <link rel="icon" type="image/png" href="assets/brand/icon-192.png" />
+  <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#0A1A2F" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="١٨٠ يوم" />
+
+  <!-- Open Graph / social sharing -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="١٨٠ يوم" />
+  <meta property="og:title" content="١٨٠ يوم — تتبّع استحقاق الأعمال الممتازة" />
+  <meta property="og:description" content="تتبّع أيام عملك الفعلية واضمن استحقاق مكافأة الأعمال الممتازة — بدون أوراق." />
+  <meta property="og:image" content="https://bowaleedpc90-cell.github.io/my-first-MVP/assets/brand/og-180days.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:url" content="https://bowaleedpc90-cell.github.io/my-first-MVP/" />
+  <meta property="og:locale" content="ar_KW" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://bowaleedpc90-cell.github.io/my-first-MVP/assets/brand/og-180days.png" />
+
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-status="safe">
+
+  <!-- ===== App lock overlay ===== -->
+  <div class="lock-screen" id="lock-screen" hidden>
+    <div class="lock-box">
+      <img src="assets/brand/icon-192.png" alt="" width="56" height="56" />
+      <h2>التطبيق مقفل</h2>
+      <p>أدخل الرمز السري للمتابعة</p>
+      <input type="password" id="lock-input" inputmode="numeric" maxlength="8" autocomplete="off" />
+      <p class="lock-error" id="lock-error" hidden>الرمز غير صحيح</p>
+      <button class="btn btn-primary" id="lock-unlock">فتح</button>
+    </div>
+  </div>
+
+  <div class="app" id="app-root">
+
+    <header>
+      <h1>١٨٠ يوم <small>تتبع استحقاق الأعمال الممتازة</small></h1>
+      <div class="header-actions">
+        <a class="brand-chip" href="https://xstarkw.com" target="_blank" rel="noopener" aria-label="X Star Software">
+          <img src="assets/brand/icon-192.png" alt="" />
+          <span><b>X STAR</b><i>SOFTWARE</i></span>
+        </a>
+        <button class="icon-btn" id="btn-settings" aria-label="الإعدادات">⚙️</button>
+      </div>
+    </header>
+
+    <!-- ============================= HOME ============================= -->
+    <section class="view" id="view-home">
+      <div class="card">
+        <div class="greeting" id="greeting">مرحباً بك 👋</div>
+        <div class="year">السنة: <span id="year-label"></span> · <span id="worktype-label"></span></div>
+
+        <div class="ring-wrap">
+          <div class="ring">
+            <svg width="200" height="200" viewBox="0 0 200 200">
+              <circle class="track" cx="100" cy="100" r="84"></circle>
+              <circle class="bar" id="ring-progress" cx="100" cy="100" r="84"></circle>
+            </svg>
+            <div class="ring-label">
+              <strong id="ring-count">0</strong>
+              <span id="ring-target">من 180 يوم</span>
+              <span class="ring-pct" id="ring-pct">0% من الهدف</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="zone-banner">
+          <strong id="zone-title"></strong>
+          <small id="zone-hint"></small>
+          <button class="link-btn" id="btn-how">كيف حسبناها؟</button>
+        </div>
+      </div>
+
+      <!-- smart alerts -->
+      <div id="alerts"></div>
+
+      <!-- stat cards -->
+      <div class="stats">
+        <div class="stat"><small>أيام العمل المتاحة</small><strong id="s-available">0</strong><em>حتى نهاية السنة</em></div>
+        <div class="stat"><small>المطلوب للوصول للهدف</small><strong id="s-remaining">0</strong><em>يوم عمل</em></div>
+        <div class="stat"><small>رصيد الأمان</small><strong id="s-buffer">0</strong><em>يوم عمل تقديري</em></div>
+        <div class="stat"><small>استئذان هذا الشهر</small><strong id="s-perm">0 / 12 ساعة</strong><em id="s-perm-count">0 / 4 مرات</em></div>
+      </div>
+
+      <!-- quick add -->
+      <section class="quick">
+        <h2>إضافة سريعة</h2>
+        <div class="quick-grid">
+          <button data-leave="annual"><span>🌴</span>دورية</button>
+          <button data-leave="sick"><span>🤒</span>مرضية</button>
+          <button data-leave="emergency"><span>⚡</span>طارئة</button>
+          <button data-leave="unpaid"><span>📋</span>بدون راتب</button>
+          <button id="btn-perm"><span>⏱️</span>استئذان</button>
+          <button id="btn-custom"><span>➕</span>مخصص</button>
+        </div>
+      </section>
+
+      <p class="disclaimer">
+        الحسبة تقديرية لمساعدتك على المتابعة، وليست اعتماداً رسمياً من جهة العمل أو ديوان الخدمة المدنية.
+        يرجى مطابقة النتائج مع سجلات جهة العمل عند الحاجة.
+        <br><span class="muted-xs">آخر تحديث لقواعد الحسبة: 2026</span>
+      </p>
+    </section>
+
+    <!-- ============================= CALENDAR ============================= -->
+    <section class="view" id="view-calendar" hidden>
+      <div class="cal-head">
+        <button class="icon-btn sm" id="cal-prev" aria-label="السابق">‹</button>
+        <h2 id="cal-title"></h2>
+        <button class="icon-btn sm" id="cal-next" aria-label="التالي">›</button>
+      </div>
+      <div class="cal-weekdays">
+        <span>الأحد</span><span>الاثنين</span><span>الثلاثاء</span><span>الأربعاء</span><span>الخميس</span><span>الجمعة</span><span>السبت</span>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div class="cal-legend">
+        <span><i class="dot work"></i> يوم عمل</span>
+        <span><i class="dot rest"></i> راحة</span>
+        <span><i class="dot holiday"></i> عطلة رسمية</span>
+        <span><i class="dot leave"></i> إجازة</span>
+        <span><i class="dot perm"></i> استئذان</span>
+      </div>
+    </section>
+
+    <!-- ============================= SIMULATOR ============================= -->
+    <section class="view" id="view-sim" hidden>
+      <div class="card">
+        <h2 class="view-title">محاكي الإجازة</h2>
+        <p class="muted">جرّب إجازة مستقبلية وشوف أثرها على رصيد الأمان قبل ما تسجلها فعلياً.</p>
+        <div class="field">
+          <label for="sim-type">نوع الإجازة</label>
+          <select id="sim-type"></select>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="sim-start">من تاريخ</label><input type="date" id="sim-start" /></div>
+          <div class="field"><label for="sim-end">إلى تاريخ</label><input type="date" id="sim-end" /></div>
+        </div>
+        <button class="btn btn-primary" id="sim-run">احسب الأثر</button>
+        <div id="sim-result" hidden></div>
+      </div>
+    </section>
+
+    <!-- ============================= LOG ============================= -->
+    <section class="view" id="view-log" hidden>
+      <h2 class="view-title">سجل الإجازات والاستئذانات</h2>
+      <div id="log-list"></div>
+    </section>
+
+    <!-- ============================= MORE ============================= -->
+    <section class="view" id="view-more" hidden>
+      <h2 class="view-title">المزيد</h2>
+      <div class="menu">
+        <button class="menu-item" id="m-how"><span>📐</span><b>طريقة الحساب</b><i>›</i></button>
+        <button class="menu-item" id="m-report"><span>📤</span><b>تصدير التقرير</b><i>›</i></button>
+        <button class="menu-item" id="m-privacy"><span>🔒</span><b>الخصوصية والأمان</b><i>›</i></button>
+        <button class="menu-item" id="m-holidays"><span>🗓️</span><b>العطل الرسمية</b><i>›</i></button>
+        <button class="menu-item" id="m-settings"><span>⚙️</span><b>الإعدادات</b><i>›</i></button>
+      </div>
+
+      <footer class="brand-footer">
+        <div class="brand-card">
+          <span class="brand-by">تصميم وتطوير</span>
+          <img class="brand-logo" src="assets/brand/logo-horizontal.png" alt="X Star Software" />
+          <p class="brand-tag">حلول برمجية احترافية للجهات والأفراد في الكويت</p>
+          <a class="brand-link" href="https://xstarkw.com" target="_blank" rel="noopener">زيارة موقع الشركة ↗</a>
+        </div>
+      </footer>
+    </section>
+
+  </div>
+
+  <!-- ===== bottom navigation ===== -->
+  <nav class="tabbar" id="tabbar">
+    <button class="tab active" data-view="home"><span>🏠</span>الرئيسية</button>
+    <button class="tab" data-view="calendar"><span>📅</span>التقويم</button>
+    <button class="tab" data-view="sim"><span>🧮</span>المحاكي</button>
+    <button class="tab" data-view="log"><span>📋</span>السجل</button>
+    <button class="tab" data-view="more"><span>⋯</span>المزيد</button>
+  </nav>
+
+  <!-- ===== toast ===== -->
+  <div class="toast" id="toast" hidden><span id="toast-msg"></span><button id="toast-undo">تراجع</button></div>
+
+  <!-- ================= SHEETS ================= -->
+
+  <!-- onboarding -->
+  <div class="sheet cover" id="sheet-onboarding">
+    <form class="sheet-panel" id="form-onboarding">
+      <div class="onb-head">
+        <img src="assets/brand/icon-192.png" alt="" width="48" height="48" />
+        <h3>مرحباً بك في «١٨٠ يوم»</h3>
+        <p class="muted">إعداد سريع لطريقة الحساب — تقدر تعدّلها لاحقاً.</p>
+      </div>
+      <div class="field">
+        <label for="onb-name">الاسم (اختياري)</label>
+        <input type="text" id="onb-name" placeholder="اسمك الكريم" />
+      </div>
+      <div class="field">
+        <label for="onb-worktype">نوع الدوام</label>
+        <select id="onb-worktype">
+          <option value="admin_morning">إداري صباحي</option>
+          <option value="admin_evening">إداري مسائي</option>
+          <option value="shifts">نوبات</option>
+          <option value="teaching">تعليمي</option>
+          <option value="custom">مخصص</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="onb-ministry">الجهة / التصنيف</label>
+        <select id="onb-ministry">
+          <option value="general">إداري عام</option>
+          <option value="education">وزارة التربية</option>
+          <option value="health">الصحة</option>
+          <option value="shifts">نوبات</option>
+          <option value="other">أخرى</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="onb-target">الهدف السنوي (أيام عمل)</label>
+        <input type="number" id="onb-target" min="1" max="366" value="180" />
+        <span class="hint" id="onb-target-hint">الافتراضي 180 للإداري — عدّله حسب جهتك.</span>
+      </div>
+      <div class="field">
+        <label>أيام الراحة الأسبوعية</label>
+        <div class="chips" id="onb-weekend"></div>
+      </div>
+      <button class="btn btn-primary" type="submit">ابدأ الآن</button>
+    </form>
+  </div>
+
+  <!-- leave / custom entry -->
+  <div class="sheet" id="sheet-leave">
+    <form class="sheet-panel" id="form-leave">
+      <h3 id="leave-sheet-title">إجازة</h3>
+      <input type="hidden" id="leave-id" value="" />
+      <div class="field" id="leave-type-wrap">
+        <label for="leave-type">النوع</label>
+        <select id="leave-type"></select>
+      </div>
+      <div class="field-row">
+        <div class="field"><label for="leave-start">من تاريخ</label><input type="date" id="leave-start" required /></div>
+        <div class="field"><label for="leave-end">إلى تاريخ</label><input type="date" id="leave-end" /></div>
+      </div>
+      <div class="field">
+        <label for="leave-note">ملاحظة (اختياري)</label>
+        <input type="text" id="leave-note" placeholder="مثال: سفر عائلي" />
+      </div>
+      <p class="preview" id="leave-preview"></p>
+      <button class="btn btn-primary" type="submit">حفظ</button>
+      <button class="btn btn-ghost" type="button" data-close>إلغاء</button>
+      <p class="note">أيام الجمعة/السبت والعطل الرسمية داخل الفترة لا تُخصم.</p>
+    </form>
+  </div>
+
+  <!-- permission -->
+  <div class="sheet" id="sheet-perm">
+    <form class="sheet-panel" id="form-perm">
+      <h3>تسجيل استئذان</h3>
+      <input type="hidden" id="perm-id" value="" />
+      <div class="field-row">
+        <div class="field"><label for="perm-date">التاريخ</label><input type="date" id="perm-date" required /></div>
+        <div class="field"><label for="perm-hours">عدد الساعات</label><input type="number" id="perm-hours" min="0.5" max="8" step="0.5" value="1" required /></div>
+      </div>
+      <p class="preview" id="perm-preview"></p>
+      <button class="btn btn-primary" type="submit">حفظ</button>
+      <button class="btn btn-ghost" type="button" data-close>إلغاء</button>
+      <p class="note">تُجمَّع ساعات الاستئذان شهرياً، وما يتجاوز الحد المسموح يتحوّل إلى أيام خصم.</p>
+    </form>
+  </div>
+
+  <!-- how calculated -->
+  <div class="sheet" id="sheet-how">
+    <div class="sheet-panel">
+      <h3>طريقة الحساب</h3>
+      <p>نحسب أيام العمل الفعلية كالتالي:</p>
+      <ol class="how-list">
+        <li>نبدأ من أيام السنة أو الفترة المحددة.</li>
+        <li>نستبعد أيام الراحة الأسبوعية حسب إعداداتك.</li>
+        <li>نستبعد العطل الرسمية المضافة في التقويم.</li>
+        <li>نستبعد الإجازات والغيابات المسجلة.</li>
+        <li>نحسب عدد الأيام المنجزة والمتبقية للوصول إلى هدفك.</li>
+        <li>نحسب هامش الأمان: أيام العمل المتاحة المتبقية − الأيام المطلوبة للوصول للهدف.</li>
+      </ol>
+      <div class="eq-card" id="how-equation"></div>
+      <p class="muted">
+        هامش الأمان هو عدد أيام العمل المتاحة المتبقية بعد طرح الأيام التي تحتاجها للوصول إلى هدفك.
+        هذه الحسبة تقديرية وتعتمد على بياناتك الحالية والعطل والإجازات المسجلة.
+      </p>
+      <p class="note">هذه الحسبة تقديرية وتعتمد على صحة البيانات المدخلة. آخر تحديث لقواعد الحسبة: 2026.</p>
+      <button class="btn btn-ghost" type="button" data-close>إغلاق</button>
+    </div>
+  </div>
+
+  <!-- report -->
+  <div class="sheet" id="sheet-report">
+    <div class="sheet-panel">
+      <h3>تصدير التقرير</h3>
+      <div id="report-body" class="report"></div>
+      <button class="btn btn-primary" type="button" id="rep-print">تصدير PDF / طباعة</button>
+      <button class="btn btn-ghost" type="button" id="rep-share">مشاركة ملخص نصي</button>
+      <button class="btn btn-ghost" type="button" data-close>إغلاق</button>
+      <p class="note">التقرير إرشادي وليس مستنداً رسمياً.</p>
+    </div>
+  </div>
+
+  <!-- privacy -->
+  <div class="sheet" id="sheet-privacy">
+    <div class="sheet-panel">
+      <h3>الخصوصية والأمان</h3>
+      <p class="muted">بياناتك محفوظة على هذا الجهاز فقط ولا نشاركها مع أي جهة حكومية أو خاصة. يمكنك حذف بياناتك في أي وقت.</p>
+      <div class="field">
+        <label for="pin-input">قفل التطبيق برمز سري (اختياري)</label>
+        <input type="password" id="pin-input" inputmode="numeric" maxlength="8" placeholder="اتركه فارغاً لإلغاء القفل" />
+      </div>
+      <button class="btn btn-primary" type="button" id="pin-save">حفظ الرمز</button>
+      <button class="btn btn-danger" type="button" id="btn-reset">حذف جميع البيانات</button>
+      <button class="btn btn-ghost" type="button" data-close>إغلاق</button>
+    </div>
+  </div>
+
+  <!-- holidays -->
+  <div class="sheet" id="sheet-holidays">
+    <div class="sheet-panel">
+      <h3>العطل الرسمية</h3>
+      <form id="form-holiday">
+        <div class="field-row">
+          <div class="field"><label for="holiday-date">التاريخ</label><input type="date" id="holiday-date" required /></div>
+          <div class="field"><label for="holiday-name">الاسم</label><input type="text" id="holiday-name" placeholder="مثال: عيد الفطر" /></div>
+        </div>
+        <button class="btn btn-primary" type="submit">إضافة عطلة</button>
+      </form>
+      <div id="holiday-list" class="mt"></div>
+      <button class="btn btn-ghost" type="button" data-close>إغلاق</button>
+      <p class="note">العطل الرسمية لدولة الكويت 2026 مُحمّلة مسبقاً. التواريخ الهجرية تخضع لتأكيد الرؤية الشرعية.</p>
+    </div>
+  </div>
+
+  <!-- settings -->
+  <div class="sheet" id="sheet-settings">
+    <form class="sheet-panel" id="form-settings">
+      <h3>الإعدادات</h3>
+      <div class="field"><label for="set-name">الاسم</label><input type="text" id="set-name" placeholder="اسمك الكريم" /></div>
+      <div class="field">
+        <label for="set-worktype">نوع الدوام</label>
+        <select id="set-worktype">
+          <option value="admin_morning">إداري صباحي</option>
+          <option value="admin_evening">إداري مسائي</option>
+          <option value="shifts">نوبات</option>
+          <option value="teaching">تعليمي</option>
+          <option value="custom">مخصص</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="set-ministry">الجهة / التصنيف</label>
+        <select id="set-ministry">
+          <option value="general">إداري عام</option>
+          <option value="education">وزارة التربية</option>
+          <option value="health">الصحة</option>
+          <option value="shifts">نوبات</option>
+          <option value="other">أخرى</option>
+        </select>
+      </div>
+      <div class="field-row">
+        <div class="field"><label for="set-target">الهدف السنوي</label><input type="number" id="set-target" min="1" max="366" /></div>
+        <div class="field"><label for="set-year">السنة</label><input type="number" id="set-year" min="2024" max="2100" /></div>
+      </div>
+      <div class="field">
+        <label>أيام الراحة الأسبوعية</label>
+        <div class="chips" id="set-weekend"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label for="set-hours">ساعات الدوام اليومي</label><input type="number" id="set-hours" min="1" max="12" step="0.5" /></div>
+        <div class="field"><label for="set-perm-hours">حد الاستئذان (ساعة/شهر)</label><input type="number" id="set-perm-hours" min="0" max="60" step="0.5" /></div>
+      </div>
+      <div class="field"><label for="set-perm-count">حد مرات الاستئذان (مرة/شهر)</label><input type="number" id="set-perm-count" min="0" max="30" /></div>
+      <button class="btn btn-primary" type="submit">حفظ الإعدادات</button>
+      <button class="btn btn-ghost" type="button" data-close>إغلاق</button>
+      <p class="note">الهدف الافتراضي 180 يوم للإداري وليس قاعدة ثابتة — عدّله حسب نوع دوامك وجهتك.</p>
+    </form>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

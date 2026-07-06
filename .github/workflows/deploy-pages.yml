@@ -1,0 +1,40 @@
+name: Test & Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+      - claude/mvp-review-planning-t10k23
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run engine unit tests
+        run: node --test test/engine.test.mjs
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Pages serves the gh-pages branch ("deploy from a branch" mode),
+      # so publishing = pushing the site tree to that branch.
+      - name: Publish to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .
+          exclude_assets: '.github'
