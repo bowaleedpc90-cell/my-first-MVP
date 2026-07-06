@@ -30,6 +30,7 @@ const LEAVE_TYPES = {
   sick:      { label: "مرضية",   emoji: "🤒" },
   emergency: { label: "طارئة",   emoji: "⚡" },
   unpaid:    { label: "بدون راتب", emoji: "📋" },
+  absence:   { label: "غياب",    emoji: "🚫" },
   other:     { label: "أخرى",    emoji: "📝" },
 };
 
@@ -711,6 +712,7 @@ function startOnboardingIfNeeded() {
   $("#onb-ministry").value = p.ministry_type;
   $("#onb-target").value = p.target_days;
   renderWeekendChips("#onb-weekend", p.weekend_days);
+  onbShowStep(1);
   $("#sheet-onboarding").classList.add("open");
 }
 $("#onb-worktype").onchange = () => {
@@ -721,6 +723,23 @@ $("#onb-worktype").onchange = () => {
     : "حدد الهدف يدوياً حسب نوع دوامك (لا يُفترض 180 تلقائياً).";
   if (t) $("#onb-target").value = t;
 };
+
+function onbShowStep(n) {
+  $("#onb-s1").hidden = n !== 1;
+  $("#onb-s2").hidden = n !== 2;
+  $("#onb-dot1").classList.toggle("on", n === 1);
+  $("#onb-dot2").classList.toggle("on", n === 2);
+  if (n === 1) {
+    $("#onb-title").textContent = "مرحباً بك في «١٨٠ يوم»";
+    $("#onb-sub").textContent = "إعداد سريع لطريقة الحساب — تقدر تعدّلها لاحقاً.";
+  } else {
+    $("#onb-title").textContent = "إجازاتك وغياباتك هذه السنة";
+    $("#onb-sub").textContent = "خطوة أخيرة ليكون عدّادك دقيقاً من البداية.";
+    onbRefreshStep2();
+  }
+}
+
+// Step 1 -> apply profile and move to step 2
 $("#form-onboarding").onsubmit = (e) => {
   e.preventDefault();
   const wk = readWeekendChips("#onb-weekend");
@@ -731,11 +750,73 @@ $("#form-onboarding").onsubmit = (e) => {
     target_days: Number($("#onb-target").value) || 180,
     weekend_days: wk.length ? wk : ["friday", "saturday"],
   });
+  saveState();
+  fillLeaveTypeSelect($("#onb-leave-type"));
+  const p = state.profile;
+  $("#onb-leave-start").value = todayISO;
+  $("#onb-leave-end").value = todayISO;
+  $("#onb-leave-start").min = `${p.year}-01-01`;
+  $("#onb-leave-end").min = `${p.year}-01-01`;
+  onbShowStep(2);
+  updateOnbLeavePreview();
+};
+
+$("#onb-back").onclick = () => onbShowStep(1);
+
+function updateOnbLeavePreview() {
+  const start = $("#onb-leave-start").value;
+  let end = $("#onb-leave-end").value || start;
+  if (!start) { $("#onb-leave-preview").textContent = ""; return; }
+  if (toDate(end) < toDate(start)) end = start;
+  const days = workdaysBetween(start, end, state.profile.weekend_days, holidayDates());
+  $("#onb-leave-preview").textContent = `سيتم خصم ${days} يوم عمل.`;
+}
+$("#onb-leave-start").oninput = updateOnbLeavePreview;
+$("#onb-leave-end").oninput = updateOnbLeavePreview;
+
+$("#onb-leave-add").onclick = () => {
+  const start = $("#onb-leave-start").value;
+  let end = $("#onb-leave-end").value || start;
+  if (!start) return;
+  if (toDate(end) < toDate(start)) end = start;
+  state.leaves.push({ id: uid(), entry_type: $("#onb-leave-type").value, start_date: start, end_date: end, note: "" });
+  saveState();
+  onbRefreshStep2();
+  render();
+};
+
+function onbRefreshStep2() {
+  // live completed-days counter
+  const s = stats();
+  $("#onb-count").innerHTML = `<small>أيام عملك المنجزة حتى اليوم</small><b>${s.completedDays}</b><small>من ${s.targetDays} يوم</small>`;
+  // list of entered leaves
+  const list = $("#onb-leave-list");
+  const items = state.leaves.slice().sort((a, b) => b.start_date.localeCompare(a.start_date));
+  if (!items.length) { list.innerHTML = ""; return; }
+  list.innerHTML = "";
+  for (const it of items) {
+    const t = LEAVE_TYPES[it.entry_type] || { label: it.entry_type, emoji: "📅" };
+    const days = workdaysBetween(it.start_date, it.end_date || it.start_date, state.profile.weekend_days, holidayDates());
+    const range = it.start_date === (it.end_date || it.start_date) ? fmtDate(it.start_date) : `${fmtDate(it.start_date)} ← ${fmtDate(it.end_date)}`;
+    const el = document.createElement("div");
+    el.className = "log-item";
+    el.innerHTML = `<span class="log-emoji">${t.emoji}</span><span class="log-body"><strong>${t.label}</strong><small>${range} · خصم ${days} يوم</small></span>`;
+    const del = document.createElement("button");
+    del.className = "log-actions"; del.style.cssText = "border:none;background:var(--bg);width:34px;height:34px;border-radius:9px;cursor:pointer";
+    del.textContent = "✕";
+    del.onclick = () => { state.leaves = state.leaves.filter((l) => l.id !== it.id); saveState(); onbRefreshStep2(); render(); };
+    el.appendChild(del);
+    list.appendChild(el);
+  }
+}
+
+// Finish onboarding
+$("#onb-finish").onclick = () => {
   state.onboarded = true;
   saveState();
   $("#sheet-onboarding").classList.remove("open");
   calYear = null; render(); renderLog();
-  toast("تم الإعداد — ابدأ بتسجيل إجازاتك ✨");
+  toast("تم الإعداد — عدّادك جاهز ✨");
 };
 
 /* ============================================================ intro splash */
