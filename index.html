@@ -219,7 +219,7 @@
         <img src="assets/brand/app-180-192.png" alt="" width="48" height="48" />
         <h3 id="onb-title">مرحباً بك في «١٨٠ يوم»</h3>
         <p class="muted" id="onb-sub">إعداد سريع لطريقة الحساب — تقدر تعدّلها لاحقاً.</p>
-        <div class="onb-dots"><span class="on" id="onb-dot1"></span><span id="onb-dot2"></span></div>
+        <div class="onb-dots"><span class="on" id="onb-dot1"></span><span id="onb-dot2"></span><span id="onb-dot3"></span></div>
       </div>
 
       <!-- step 1: profile -->
@@ -275,9 +275,41 @@
         <p class="preview" id="onb-leave-preview"></p>
         <button type="button" class="btn btn-ghost" id="onb-leave-add">＋ أضف للسجل</button>
         <div id="onb-leave-list" class="mt"></div>
-        <button type="button" class="btn btn-primary" id="onb-finish">إنهاء والبدء ✨</button>
+        <button type="button" class="btn btn-primary" id="onb-next2">التالي ←</button>
         <button type="button" class="btn btn-ghost" id="onb-back">رجوع</button>
-        <p class="note">ما عندك إجازات سابقة؟ اضغط «إنهاء والبدء» مباشرة.</p>
+        <p class="note">ما عندك إجازات سابقة؟ اضغط «التالي» مباشرة.</p>
+      </div>
+
+      <!-- step 3: add to home screen -->
+      <div id="onb-s3" hidden>
+        <div class="install-hero">
+          <span>📲</span>
+          <p>ثبّت التطبيق على شاشتك الرئيسية ليفتح بسرعة وكأنه تطبيق — بدون شريط المتصفح.</p>
+        </div>
+
+        <div class="seg" id="install-seg">
+          <button type="button" class="seg-btn on" data-os="ios"> آيفون (Safari)</button>
+          <button type="button" class="seg-btn" data-os="android"> أندرويد (Chrome)</button>
+        </div>
+
+        <div class="install-steps" id="install-ios">
+          <div class="istep"><span class="inum">١</span><span>افتح الرابط في متصفح <b>Safari</b>.</span></div>
+          <div class="istep"><span class="inum">٢</span><span>اضغط زر <b>المشاركة</b>
+            <span class="iglyph"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#2176FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></span>
+            في شريط الأسفل.</span></div>
+          <div class="istep"><span class="inum">٣</span><span>مرّر واختر <b>«أضف إلى الشاشة الرئيسية»</b>.</span></div>
+          <div class="istep"><span class="inum">٤</span><span>اضغط <b>«إضافة»</b> — بيظهر باسم <b>«١٨٠ يوم»</b> بأيقونته.</span></div>
+        </div>
+
+        <div class="install-steps" id="install-android" hidden>
+          <div class="istep"><span class="inum">١</span><span>افتح الرابط في متصفح <b>Chrome</b>.</span></div>
+          <div class="istep"><span class="inum">٢</span><span>اضغط قائمة <b>الثلاث نقاط</b> <span class="iglyph">⋮</span> فوق يمين.</span></div>
+          <div class="istep"><span class="inum">٣</span><span>اختر <b>«تثبيت التطبيق»</b> أو <b>«إضافة إلى الشاشة الرئيسية»</b>.</span></div>
+          <div class="istep"><span class="inum">٤</span><span>اضغط <b>«تثبيت»</b> — بيظهر باسم <b>«١٨٠ يوم»</b> بأيقونته.</span></div>
+        </div>
+
+        <button type="button" class="btn btn-primary" id="onb-done">تم، ابدأ الآن ✨</button>
+        <button type="button" class="btn btn-ghost" id="onb-back2">رجوع</button>
       </div>
     </form>
   </div>
