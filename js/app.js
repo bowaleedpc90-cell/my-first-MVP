@@ -724,20 +724,36 @@ $("#onb-worktype").onchange = () => {
   if (t) $("#onb-target").value = t;
 };
 
+const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+const isAndroid = /Android/i.test(navigator.userAgent);
+
 function onbShowStep(n) {
   $("#onb-s1").hidden = n !== 1;
   $("#onb-s2").hidden = n !== 2;
+  $("#onb-s3").hidden = n !== 3;
   $("#onb-dot1").classList.toggle("on", n === 1);
   $("#onb-dot2").classList.toggle("on", n === 2);
+  $("#onb-dot3").classList.toggle("on", n === 3);
   if (n === 1) {
     $("#onb-title").textContent = "مرحباً بك في «١٨٠ يوم»";
     $("#onb-sub").textContent = "إعداد سريع لطريقة الحساب — تقدر تعدّلها لاحقاً.";
-  } else {
+  } else if (n === 2) {
     $("#onb-title").textContent = "إجازاتك وغياباتك هذه السنة";
-    $("#onb-sub").textContent = "خطوة أخيرة ليكون عدّادك دقيقاً من البداية.";
+    $("#onb-sub").textContent = "خطوة ليكون عدّادك دقيقاً من البداية.";
     onbRefreshStep2();
+  } else {
+    $("#onb-title").textContent = "أضِف التطبيق لجوالك";
+    $("#onb-sub").textContent = "خطوة أخيرة (اختيارية) للوصول السريع.";
   }
 }
+
+// segment toggle (iOS / Android)
+function setInstallOS(os) {
+  $("#install-ios").hidden = os !== "ios";
+  $("#install-android").hidden = os !== "android";
+  document.querySelectorAll("#install-seg .seg-btn").forEach((b) => b.classList.toggle("on", b.dataset.os === os));
+}
+document.querySelectorAll("#install-seg .seg-btn").forEach((b) => (b.onclick = () => setInstallOS(b.dataset.os)));
 
 // Step 1 -> apply profile and move to step 2
 $("#form-onboarding").onsubmit = (e) => {
@@ -810,14 +826,22 @@ function onbRefreshStep2() {
   }
 }
 
-// Finish onboarding
-$("#onb-finish").onclick = () => {
+// Step 2 -> step 3 (install), or finish directly if already installed
+$("#onb-next2").onclick = () => {
+  if (isStandalone) { finishOnboarding(); return; }
+  setInstallOS(isAndroid ? "android" : "ios");
+  onbShowStep(3);
+};
+$("#onb-back2").onclick = () => onbShowStep(2);
+$("#onb-done").onclick = finishOnboarding;
+
+function finishOnboarding() {
   state.onboarded = true;
   saveState();
   $("#sheet-onboarding").classList.remove("open");
   calYear = null; render(); renderLog();
   toast("تم الإعداد — عدّادك جاهز ✨");
-};
+}
 
 /* ============================================================ intro splash */
 
