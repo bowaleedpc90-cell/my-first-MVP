@@ -27,7 +27,7 @@ A mobile-first web app that helps Kuwaiti government employees track their actua
 - **Smart alerts** — contextual cards when the buffer drops below 20 / 10 days, the target becomes unreachable, or the monthly permission limit is exceeded.
 - **Report export** — PDF/print or shareable text summary; **privacy page** with app PIN lock and full data deletion.
 - **Kuwait calendar** — Fridays/Saturdays excluded automatically; official 2026 Kuwait public holidays (per CSC announcements) pre-loaded and editable (Hijri dates subject to moon-sighting).
-- **Installable (PWA)** — add to the phone home screen with the X Star icon for an app-like experience.
+- **Installable (PWA)** — add to the phone home screen and it appears as an app named **"١٨٠ يوم"** with a clean green ١٨٠ icon (standard + maskable). A short intro splash ("كل يوم يقربك للامتياز") greets first-time users; X Star stays as a subtle signature in the header and footer.
 
 The safety-buffer status thresholds are: **safe ≥ 20**, **warning 10–19**, **danger < 20 unreachable or < 10** (configurable).
 

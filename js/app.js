@@ -47,6 +47,7 @@ const WORKTYPE_TARGET = { admin_morning: 180, admin_evening: 180, teaching: 135 
 function defaultState() {
   return {
     onboarded: false,
+    introSeen: false,
     pin: null,
     profile: {
       full_name: "",
@@ -601,7 +602,7 @@ $("#btn-reset").onclick = () => {
   if (!confirm("سيتم حذف جميع البيانات على هذا الجهاز نهائياً. متأكد؟")) return;
   localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(LEGACY_KEY);
   state = defaultState(); saveState(); closeSheets();
-  calYear = null; render(); renderLog(); startOnboardingIfNeeded();
+  calYear = null; render(); renderLog(); startIntroThenOnboarding();
 };
 
 function applyLock() {
@@ -737,9 +738,21 @@ $("#form-onboarding").onsubmit = (e) => {
   toast("تم الإعداد — ابدأ بتسجيل إجازاتك ✨");
 };
 
+/* ============================================================ intro splash */
+
+function startIntroThenOnboarding() {
+  if (!state.introSeen) $("#intro-screen").hidden = false;
+  else startOnboardingIfNeeded();
+}
+$("#intro-start").onclick = () => {
+  state.introSeen = true; saveState();
+  $("#intro-screen").hidden = true;
+  startOnboardingIfNeeded();
+};
+
 /* ============================================================ boot */
 
 applyLock();
 render();
 renderLog();
-startOnboardingIfNeeded();
+startIntroThenOnboarding();
