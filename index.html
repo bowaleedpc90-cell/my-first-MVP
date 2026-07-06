@@ -216,44 +216,69 @@
   <div class="sheet cover" id="sheet-onboarding">
     <form class="sheet-panel" id="form-onboarding">
       <div class="onb-head">
-        <img src="assets/brand/icon-192.png" alt="" width="48" height="48" />
-        <h3>مرحباً بك في «١٨٠ يوم»</h3>
-        <p class="muted">إعداد سريع لطريقة الحساب — تقدر تعدّلها لاحقاً.</p>
+        <img src="assets/brand/app-180-192.png" alt="" width="48" height="48" />
+        <h3 id="onb-title">مرحباً بك في «١٨٠ يوم»</h3>
+        <p class="muted" id="onb-sub">إعداد سريع لطريقة الحساب — تقدر تعدّلها لاحقاً.</p>
+        <div class="onb-dots"><span class="on" id="onb-dot1"></span><span id="onb-dot2"></span></div>
       </div>
-      <div class="field">
-        <label for="onb-name">الاسم (اختياري)</label>
-        <input type="text" id="onb-name" placeholder="اسمك الكريم" />
+
+      <!-- step 1: profile -->
+      <div id="onb-s1">
+        <div class="field">
+          <label for="onb-name">الاسم (اختياري)</label>
+          <input type="text" id="onb-name" placeholder="اسمك الكريم" />
+        </div>
+        <div class="field">
+          <label for="onb-worktype">نوع الدوام</label>
+          <select id="onb-worktype">
+            <option value="admin_morning">إداري صباحي</option>
+            <option value="admin_evening">إداري مسائي</option>
+            <option value="shifts">نوبات</option>
+            <option value="teaching">تعليمي</option>
+            <option value="custom">مخصص</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="onb-ministry">الجهة / التصنيف</label>
+          <select id="onb-ministry">
+            <option value="general">إداري عام</option>
+            <option value="education">وزارة التربية</option>
+            <option value="health">الصحة</option>
+            <option value="shifts">نوبات</option>
+            <option value="other">أخرى</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="onb-target">الهدف السنوي (أيام عمل)</label>
+          <input type="number" id="onb-target" min="1" max="366" value="180" />
+          <span class="hint" id="onb-target-hint">الافتراضي 180 للإداري — عدّله حسب جهتك.</span>
+        </div>
+        <div class="field">
+          <label>أيام الراحة الأسبوعية</label>
+          <div class="chips" id="onb-weekend"></div>
+        </div>
+        <button class="btn btn-primary" type="submit">التالي ←</button>
       </div>
-      <div class="field">
-        <label for="onb-worktype">نوع الدوام</label>
-        <select id="onb-worktype">
-          <option value="admin_morning">إداري صباحي</option>
-          <option value="admin_evening">إداري مسائي</option>
-          <option value="shifts">نوبات</option>
-          <option value="teaching">تعليمي</option>
-          <option value="custom">مخصص</option>
-        </select>
+
+      <!-- step 2: past leaves & absences this year -->
+      <div id="onb-s2" hidden>
+        <div class="onb-count" id="onb-count"></div>
+        <p class="hint" style="margin-bottom:14px">أدخل إجازاتك وغياباتك من بداية السنة حتى اليوم مرة واحدة، ليظهر رقمك الفعلي من البداية. <b>الاستئذان غير مطلوب هنا.</b></p>
+        <div class="field">
+          <label for="onb-leave-type">النوع</label>
+          <select id="onb-leave-type"></select>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="onb-leave-start">من تاريخ</label><input type="date" id="onb-leave-start" /></div>
+          <div class="field"><label for="onb-leave-end">إلى تاريخ</label><input type="date" id="onb-leave-end" /></div>
+        </div>
+        <p class="preview" id="onb-leave-preview"></p>
+        <button type="button" class="btn btn-ghost" id="onb-leave-add">＋ أضف للسجل</button>
+        <div id="onb-leave-list" class="mt"></div>
+        <button type="button" class="btn btn-primary" id="onb-finish">إنهاء والبدء ✨</button>
+        <button type="button" class="btn btn-ghost" id="onb-back">رجوع</button>
+        <p class="note">ما عندك إجازات سابقة؟ اضغط «إنهاء والبدء» مباشرة.</p>
       </div>
-      <div class="field">
-        <label for="onb-ministry">الجهة / التصنيف</label>
-        <select id="onb-ministry">
-          <option value="general">إداري عام</option>
-          <option value="education">وزارة التربية</option>
-          <option value="health">الصحة</option>
-          <option value="shifts">نوبات</option>
-          <option value="other">أخرى</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="onb-target">الهدف السنوي (أيام عمل)</label>
-        <input type="number" id="onb-target" min="1" max="366" value="180" />
-        <span class="hint" id="onb-target-hint">الافتراضي 180 للإداري — عدّله حسب جهتك.</span>
-      </div>
-      <div class="field">
-        <label>أيام الراحة الأسبوعية</label>
-        <div class="chips" id="onb-weekend"></div>
-      </div>
-      <button class="btn btn-primary" type="submit">ابدأ الآن</button>
     </form>
   </div>
 
