@@ -768,35 +768,92 @@ $("#form-onboarding").onsubmit = (e) => {
   });
   saveState();
   fillLeaveTypeSelect($("#onb-leave-type"));
-  const p = state.profile;
-  $("#onb-leave-start").value = todayISO;
-  $("#onb-leave-end").value = todayISO;
-  $("#onb-leave-start").min = `${p.year}-01-01`;
-  $("#onb-leave-end").min = `${p.year}-01-01`;
+  rangeCal.init("#onb-rcal", { year: state.profile.year, onChange: onbRangeChanged });
   onbShowStep(2);
-  updateOnbLeavePreview();
+  onbRangeChanged();
 };
 
 $("#onb-back").onclick = () => onbShowStep(1);
 
-function updateOnbLeavePreview() {
-  const start = $("#onb-leave-start").value;
-  let end = $("#onb-leave-end").value || start;
-  if (!start) { $("#onb-leave-preview").textContent = ""; return; }
-  if (toDate(end) < toDate(start)) end = start;
+/* ---- Booking-style range calendar (from–to in one scrollable calendar) ---- */
+const RCAL_WEEK = ["أحد", "اثن", "ثلا", "أرب", "خمي", "جمع", "سبت"];
+const rangeCal = {
+  container: null, year: null, lastMonth: 11, start: null, end: null, onChange: null,
+  init(sel, { year, onChange }) {
+    this.container = $(sel); this.year = year; this.onChange = onChange;
+    this.start = null; this.end = null;
+    const now = toDate(todayISO);
+    this.lastMonth = (year === now.getFullYear()) ? now.getMonth() : 11;
+    this.render();
+    const months = this.container.querySelectorAll(".rcal-month");
+    if (months.length) this.container.scrollTop = months[months.length - 1].offsetTop - 6;
+  },
+  pick(iso) {
+    if (this.start && !this.end) {
+      if (toDate(iso) < toDate(this.start)) this.start = iso;
+      else this.end = iso;
+    } else {
+      this.start = iso; this.end = null;
+    }
+    this.render();
+    if (this.onChange) this.onChange();
+  },
+  clear() { this.start = null; this.end = null; this.render(); if (this.onChange) this.onChange(); },
+  getRange() { return { start: this.start, end: this.end || this.start }; },
+  render() {
+    const c = this.container; if (!c) return;
+    c.innerHTML = "";
+    for (let m = 0; m <= this.lastMonth; m++) {
+      const mDiv = document.createElement("div"); mDiv.className = "rcal-month";
+      const head = document.createElement("div"); head.className = "rcal-mhead";
+      head.textContent = new Date(this.year, m, 1).toLocaleDateString("ar-KW", { month: "long", year: "numeric" });
+      mDiv.appendChild(head);
+      const wk = document.createElement("div"); wk.className = "rcal-week";
+      RCAL_WEEK.forEach((w) => { const s = document.createElement("span"); s.textContent = w; wk.appendChild(s); });
+      mDiv.appendChild(wk);
+      const grid = document.createElement("div"); grid.className = "rcal-grid";
+      const startDow = new Date(this.year, m, 1).getDay();
+      const dim = new Date(this.year, m + 1, 0).getDate();
+      for (let i = 0; i < startDow; i++) { const e = document.createElement("div"); e.className = "rcal-day empty"; grid.appendChild(e); }
+      for (let d = 1; d <= dim; d++) {
+        const iso = `${this.year}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+        const btn = document.createElement("button"); btn.type = "button"; btn.className = "rcal-day"; btn.textContent = d;
+        const future = toDate(iso) > toDate(todayISO);
+        if (future) btn.classList.add("disabled");
+        if (iso === todayISO) btn.classList.add("today");
+        const s = this.start, e = this.end;
+        if (s && e) {
+          if (iso === s || iso === e) btn.classList.add(iso === s ? "start" : "end");
+          else if (toDate(iso) > toDate(s) && toDate(iso) < toDate(e)) btn.classList.add("inrange");
+        } else if (s && iso === s) btn.classList.add("start");
+        if (!future) btn.onclick = () => this.pick(iso);
+        grid.appendChild(btn);
+      }
+      mDiv.appendChild(grid);
+      c.appendChild(mDiv);
+    }
+  },
+};
+
+function onbRangeChanged() {
+  const { start, end } = rangeCal.getRange();
+  if (!start) {
+    $("#onb-rcal-summary").textContent = "اختر يوم البداية ثم يوم النهاية (أو يوماً واحداً ثم «أضف»).";
+    $("#onb-leave-preview").textContent = "";
+    return;
+  }
   const days = workdaysBetween(start, end, state.profile.weekend_days, holidayDates());
+  const range = start === end ? fmtDateFull(start) : `${fmtDate(start)} ← ${fmtDate(end)}`;
+  $("#onb-rcal-summary").textContent = `الفترة المختارة: ${range}`;
   $("#onb-leave-preview").textContent = `سيتم خصم ${days} يوم عمل.`;
 }
-$("#onb-leave-start").oninput = updateOnbLeavePreview;
-$("#onb-leave-end").oninput = updateOnbLeavePreview;
 
 $("#onb-leave-add").onclick = () => {
-  const start = $("#onb-leave-start").value;
-  let end = $("#onb-leave-end").value || start;
+  const { start, end } = rangeCal.getRange();
   if (!start) return;
-  if (toDate(end) < toDate(start)) end = start;
   state.leaves.push({ id: uid(), entry_type: $("#onb-leave-type").value, start_date: start, end_date: end, note: "" });
   saveState();
+  rangeCal.clear();
   onbRefreshStep2();
   render();
 };
