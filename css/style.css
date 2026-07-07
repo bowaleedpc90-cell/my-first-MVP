@@ -297,6 +297,17 @@ header h1 small { display: block; font-size: 12.5px; font-weight: 400; color: va
 .rcal-day.inrange { background: color-mix(in srgb, var(--accent) 15%, white); }
 .rcal-day.start, .rcal-day.end { background: var(--accent); color: #fff; font-weight: 700; }
 .rcal-summary { font-size: 12.5px; color: var(--accent); margin-top: 8px; min-height: 16px; }
+.rcal-toggle {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--bg);
+  padding: 12px; min-height: 46px; font-family: inherit; font-size: 14.5px;
+  color: var(--text); cursor: pointer; text-align: start;
+}
+.rcal-toggle b { flex: 1; font-weight: 600; }
+.rcal-toggle i { font-style: normal; color: var(--muted); transition: transform .2s ease; }
+.rcal-toggle[aria-expanded="true"] i { transform: rotate(180deg); }
+.rcal-toggle[aria-expanded="true"] { border-color: var(--accent); }
+.rcal { margin-top: 8px; }
 
 /* install step */
 .install-hero { text-align: center; margin-bottom: 16px; }
@@ -401,10 +412,44 @@ header h1 small { display: block; font-size: 12.5px; font-weight: 400; color: va
 .lock-box input { width: 100%; text-align: center; letter-spacing: .4em; font-size: 22px; padding: 14px; border-radius: 12px; border: 1px solid #24374f; background: #0f2338; color: #fff; margin-bottom: 12px; }
 .lock-error { color: #ff8a8a !important; }
 
+/* ============ printable year calendar ============ */
+#print-area { display: none; }
+
+.pcal { direction: rtl; font-family: "Segoe UI", Tahoma, system-ui, sans-serif; color: #1c2333; }
+.pcal-head { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #16a34a; padding-bottom: 10px; margin-bottom: 12px; }
+.pcal-head .t h1 { font-size: 22px; margin: 0 0 2px; }
+.pcal-head .t p { font-size: 11px; color: #5b6472; margin: 0; }
+.pcal-head img.appicon { width: 46px; height: 46px; border-radius: 10px; }
+.pcal-summary { display: flex; gap: 8px; margin-bottom: 12px; }
+.pcal-summary div { flex: 1; border: 1px solid #e6e9f0; border-radius: 8px; padding: 7px 6px; text-align: center; }
+.pcal-summary b { display: block; font-size: 17px; color: #16a34a; }
+.pcal-summary small { font-size: 9.5px; color: #5b6472; }
+.pcal-legend { display: flex; gap: 12px; justify-content: center; font-size: 9.5px; color: #5b6472; margin-bottom: 10px; }
+.pcal-legend i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-inline-end: 3px; }
+.pcal-months { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.pcal-month { border: 1px solid #e6e9f0; border-radius: 8px; padding: 6px; break-inside: avoid; }
+.pcal-mname { text-align: center; font-size: 10.5px; font-weight: 700; margin-bottom: 4px; }
+.pcal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; }
+.pcal-grid span { text-align: center; font-size: 8px; padding: 2px 0; border-radius: 3px; }
+.pcal-grid .wd { color: #9aa2b0; font-size: 6.5px; }
+.pcal-grid .rest { background: #eef1f6; color: #8b93a2; }
+.pcal-grid .holiday { background: #dbeafe; color: #1d4ed8; font-weight: 700; }
+.pcal-grid .leave { background: #fee2e2; color: #b91c1c; font-weight: 700; }
+.pcal-grid .perm { background: #fef3c7; color: #b45309; font-weight: 700; }
+.pcal-foot { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #e6e9f0; margin-top: 12px; padding-top: 8px; }
+.pcal-foot img { height: 30px; }
+.pcal-foot .d { font-size: 8.5px; color: #5b6472; text-align: start; line-height: 1.5; }
+
 /* print / PDF */
 @media print {
   body { background: #fff; }
   .tabbar, .sheet .btn, header .icon-btn, .note { display: none !important; }
   .sheet { position: static; background: none; display: block; }
   .sheet-panel { box-shadow: none; max-height: none; }
+
+  /* year-calendar print mode: show only the printable area */
+  body.print-cal * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body.print-cal .app, body.print-cal .tabbar, body.print-cal .sheet,
+  body.print-cal .toast, body.print-cal .intro-screen, body.print-cal .lock-screen { display: none !important; }
+  body.print-cal #print-area { display: block !important; }
 }
