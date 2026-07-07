@@ -677,6 +677,10 @@ $("#form-holiday").onsubmit = (e) => {
   const date = $("#holiday-date").value;
   const name = $("#holiday-name").value.trim() || "عطلة رسمية";
   if (!date) return;
+  if (state.holidays.some((h) => h.date === date)) {
+    toast("يوجد عطلة مسجلة بهذا التاريخ مسبقاً");
+    return;
+  }
   state.holidays.push({ date, name });
   saveState(); $("#holiday-date").value = ""; $("#holiday-name").value = "";
   renderHolidays(); render();
