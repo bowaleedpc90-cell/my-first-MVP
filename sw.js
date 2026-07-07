@@ -1,26 +1,33 @@
 /* "180 Days" service worker — offline support for the installed app.
- * Strategy: network-first for navigations (so app updates arrive),
- * stale-while-revalidate for same-origin static assets.
- * Bump CACHE_VERSION when shipping breaking asset changes.
+ *
+ * Strategy, chosen to avoid version skew (new HTML paired with stale JS):
+ *   - HTML + code (js/css/manifest): network-first, fall back to cache when
+ *     offline. Online users always get a consistent fresh set; offline users
+ *     get the last-cached consistent set.
+ *   - Images: cache-first (they change only with a CACHE_VERSION bump).
+ * Bump CACHE_VERSION on any release so activate() clears the old cache.
  */
-const CACHE_VERSION = "days180-v1";
-const CORE_ASSETS = [
-  "./",
+const CACHE_VERSION = "days180-v2";
+
+// App shell precached on install. Kept small and resilient: a single missing
+// file must not abort the whole install (see the allSettled below).
+const SHELL = [
   "./index.html",
   "./css/style.css",
   "./js/app.js",
   "./js/engine.js",
   "./manifest.webmanifest",
   "./assets/brand/app-180-192.png",
-  "./assets/brand/app-180-512.png",
-  "./assets/brand/app-180-apple.png",
-  "./assets/brand/icon-192.png",
-  "./assets/brand/logo-horizontal.png",
 ];
+
+const isCode = (url) => /\.(?:js|css|webmanifest)$/.test(url.pathname);
+const isImage = (url) => /\.(?:png|jpg|jpeg|svg|webp|ico)$/.test(url.pathname);
 
 self.addEventListener("install", (e) => {
   e.waitUntil(
-    caches.open(CACHE_VERSION).then((c) => c.addAll(CORE_ASSETS)).then(() => self.skipWaiting())
+    caches.open(CACHE_VERSION)
+      .then((c) => Promise.allSettled(SHELL.map((u) => c.add(u))))
+      .then(() => self.skipWaiting())
   );
 });
 
@@ -32,38 +39,35 @@ self.addEventListener("activate", (e) => {
   );
 });
 
+function putIfOk(req, res) {
+  if (res && res.ok && res.type === "basic") {
+    const copy = res.clone();
+    caches.open(CACHE_VERSION).then((c) => c.put(req, copy));
+  }
+  return res;
+}
+
 self.addEventListener("fetch", (e) => {
   const req = e.request;
-  if (req.method !== "GET" || new URL(req.url).origin !== self.location.origin) return;
+  const url = new URL(req.url);
+  if (req.method !== "GET" || url.origin !== self.location.origin) return;
 
-  // Navigations: try the network first so new releases show up; fall back
-  // to the cached shell when offline.
-  if (req.mode === "navigate") {
+  // Navigations + code: network-first, cache only successful responses,
+  // fall back to cache (then the shell) when offline.
+  if (req.mode === "navigate" || isCode(url)) {
+    const key = req.mode === "navigate" ? "./index.html" : req;
     e.respondWith(
       fetch(req)
-        .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE_VERSION).then((c) => c.put("./index.html", copy));
-          return res;
-        })
-        .catch(() => caches.match("./index.html"))
+        .then((res) => { putIfOk(key, res); return res; })
+        .catch(async () => (await caches.match(key)) || (await caches.match("./index.html")) || Response.error())
     );
     return;
   }
 
-  // Static assets: serve from cache immediately, refresh in the background.
+  // Images / everything else: cache-first, lazily fill the cache on first use.
   e.respondWith(
-    caches.match(req).then((cached) => {
-      const refresh = fetch(req)
-        .then((res) => {
-          if (res.ok) {
-            const copy = res.clone();
-            caches.open(CACHE_VERSION).then((c) => c.put(req, copy));
-          }
-          return res;
-        })
-        .catch(() => cached);
-      return cached || refresh;
-    })
+    caches.match(req).then((cached) =>
+      cached || fetch(req).then((res) => (isImage(url) ? putIfOk(req, res) : res)).catch(() => Response.error())
+    )
   );
 });
