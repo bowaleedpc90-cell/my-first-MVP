@@ -7,8 +7,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+# No workflow-level write: the test job (which runs PR-authored code) gets
+# read-only; only the deploy job is granted contents: write.
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: pages
@@ -17,6 +19,8 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -30,6 +34,8 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: test
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       # Pages serves the gh-pages branch ("deploy from a branch" mode),
@@ -39,4 +45,4 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: .
-          exclude_assets: '.github,test,docs'
+          exclude_assets: '.github,test'
