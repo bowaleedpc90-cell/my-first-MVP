@@ -2,7 +2,9 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <!-- Pinch-drift is prevented via CSS (touch-action/overflow); zoom stays
+       available for accessibility (WCAG 1.4.4). -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>١٨٠ يوم — مساعدك لتتبع استحقاق الأعمال الممتازة</title>
   <meta name="description" content="تتبّع أيام عملك الفعلية واضمن استحقاق مكافأة الأعمال الممتازة لموظفي الحكومة في الكويت — بدون أوراق." />
   <link rel="icon" type="image/png" href="assets/brand/app-180-192.png" />
@@ -34,7 +36,7 @@
   <!-- ===== App lock overlay ===== -->
   <div class="lock-screen" id="lock-screen" hidden>
     <div class="lock-box">
-      <img src="assets/brand/icon-192.png" alt="" width="56" height="56" />
+      <img src="assets/brand/app-180-192.png" alt="" width="56" height="56" />
       <h2>التطبيق مقفل</h2>
       <p>أدخل الرمز السري للمتابعة</p>
       <input type="password" id="lock-input" inputmode="numeric" maxlength="8" autocomplete="off" />
@@ -54,7 +56,7 @@
     </div>
   </div>
 
-  <div class="app" id="app-root">
+  <main class="app" id="app-root">
 
     <header>
       <h1>١٨٠ يوم <small>تتبع استحقاق الأعمال الممتازة</small></h1>
@@ -196,15 +198,15 @@
       </footer>
     </section>
 
-  </div>
+  </main>
 
   <!-- ===== bottom navigation ===== -->
-  <nav class="tabbar" id="tabbar">
-    <button class="tab active" data-view="home"><span>🏠</span>الرئيسية</button>
-    <button class="tab" data-view="calendar"><span>📅</span>التقويم</button>
-    <button class="tab" data-view="sim"><span>🧮</span>المحاكي</button>
-    <button class="tab" data-view="log"><span>📋</span>السجل</button>
-    <button class="tab" data-view="more"><span>⋯</span>المزيد</button>
+  <nav class="tabbar" id="tabbar" aria-label="التنقل الرئيسي">
+    <button class="tab active" data-view="home" aria-current="page"><span aria-hidden="true">🏠</span>الرئيسية</button>
+    <button class="tab" data-view="calendar"><span aria-hidden="true">📅</span>التقويم</button>
+    <button class="tab" data-view="sim"><span aria-hidden="true">🧮</span>المحاكي</button>
+    <button class="tab" data-view="log"><span aria-hidden="true">📋</span>السجل</button>
+    <button class="tab" data-view="more"><span aria-hidden="true">⋯</span>المزيد</button>
   </nav>
 
   <!-- ===== toast ===== -->

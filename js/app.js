@@ -1,6 +1,6 @@
 import {
   computeStats, simulateLeave, workdaysBetween, calculateExcludedWorkdays,
-  monthlyPermissionUsage, toISO, toDate, addDaysISO, RULES_LAST_UPDATED,
+  monthlyPermissionUsage, toISO, toDate, addDaysISO,
 } from "./engine.js";
 
 /* ============================================================ constants */
@@ -98,7 +98,16 @@ function loadState() {
   return defaultState();
 }
 
-function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // iOS Safari Private Mode or full storage: writes throw — tell the user
+    // instead of failing silently. Deferred so it overrides any success
+    // toast the caller shows in the same tick.
+    setTimeout(() => toast("تعذّر الحفظ — قد يكون التصفح الخاص مفعّلاً أو مساحة التخزين ممتلئة ⚠️"), 0);
+  }
+}
 
 let state = loadState();
 const $ = (s) => document.querySelector(s);
@@ -108,9 +117,12 @@ const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 
 const holidayDates = () => state.holidays.map((h) => h.date);
 
 let calYear, calMonth; // calendar view state
-let lastAction = null; // for undo
 
 /* ============================================================ helpers */
+
+// Escape user-entered text before inserting into innerHTML templates.
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
 function fmtDate(iso) {
   return toDate(iso).toLocaleDateString("ar-KW", { day: "numeric", month: "long" });
@@ -182,7 +194,12 @@ function showInfo(title, html) {
 
 function switchView(view) {
   $$(".view").forEach((v) => (v.hidden = v.id !== `view-${view}`));
-  $$(".tab").forEach((t) => t.classList.toggle("active", t.dataset.view === view));
+  $$(".tab").forEach((t) => {
+    const active = t.dataset.view === view;
+    t.classList.toggle("active", active);
+    if (active) t.setAttribute("aria-current", "page");
+    else t.removeAttribute("aria-current");
+  });
   window.scrollTo(0, 0);
   if (view === "calendar") renderCalendar();
   if (view === "log") renderLog();
@@ -410,7 +427,7 @@ function renderLog() {
       el.innerHTML = `
         <span class="log-emoji">${t.emoji}</span>
         <span class="log-body">
-          <strong>${t.label}${item.note ? " · " + item.note : ""}</strong>
+          <strong>${t.label}${item.note ? " · " + esc(item.note) : ""}</strong>
           <small>${range} · خصم ${imp.total} يوم عمل</small>
           ${impactLine}
         </span>`;
@@ -486,6 +503,8 @@ function renderCalendar() {
     const cell = document.createElement("button");
     cell.className = `cal-cell ${cls}${iso === todayISO ? " today" : ""}`;
     cell.innerHTML = `${d}${isPerm && isLeave ? '<i class="cdot" style="background:var(--yellow)"></i>' : ""}`;
+    const dayKind = isLeave ? "إجازة" : isHol ? "عطلة رسمية" : isWknd ? "راحة" : "يوم عمل";
+    cell.setAttribute("aria-label", `${fmtDateFull(iso)} — ${dayKind}${isPerm ? "، استئذان" : ""}`);
     cell.onclick = () => showDayDetail(iso, { isWknd, isHol, isLeave, isPerm, holName: holidayMap.get(iso) });
     grid.appendChild(cell);
   }
@@ -503,7 +522,7 @@ function showDayDetail(iso, info) {
   rows.push(`<div class="rrow"><b>يوم عمل؟</b><span>${(!info.isWknd && !info.isHol) ? "نعم" : "لا"}</span></div>`);
   rows.push(`<div class="rrow"><b>يدخل في الحسبة؟</b><span>${counted ? "نعم ✅" : "لا ❌"}</span></div>`);
   if (info.isWknd) rows.push(`<div class="rrow"><b>السبب</b><span>راحة أسبوعية</span></div>`);
-  if (info.isHol) rows.push(`<div class="rrow"><b>عطلة رسمية</b><span>${info.holName || "—"}</span></div>`);
+  if (info.isHol) rows.push(`<div class="rrow"><b>عطلة رسمية</b><span>${esc(info.holName || "—")}</span></div>`);
   if (info.isLeave) rows.push(`<div class="rrow"><b>إجازة مسجلة</b><span>نعم — مستبعد من الحسبة</span></div>`);
   if (info.isPerm) rows.push(`<div class="rrow"><b>استئذان</b><span>يوجد استئذان مسجل</span></div>`);
   showInfo("تفاصيل اليوم", `<div class="report">${rows.join("")}</div>`);
@@ -574,7 +593,7 @@ function openReport() {
   const { rows } = buildReport();
   $("#report-body").innerHTML =
     `<h4>تقرير متابعة الأعمال الممتازة</h4>` +
-    rows.map(([k, v]) => `<div class="rrow"><b>${k}</b><span>${v}</span></div>`).join("");
+    rows.map(([k, v]) => `<div class="rrow"><b>${k}</b><span>${esc(v)}</span></div>`).join("");
   openSheet("#sheet-report");
 }
 $("#m-report").onclick = openReport;
@@ -628,7 +647,7 @@ function renderHolidays() {
   for (const h of [...state.holidays].sort((a, b) => a.date.localeCompare(b.date))) {
     const el = document.createElement("div");
     el.className = "log-item";
-    el.innerHTML = `<span class="log-emoji">🗓️</span><span class="log-body"><strong>${h.name}</strong><small>${fmtDateFull(h.date)}</small></span>`;
+    el.innerHTML = `<span class="log-emoji">🗓️</span><span class="log-body"><strong>${esc(h.name)}</strong><small>${fmtDateFull(h.date)}</small></span>`;
     const del = document.createElement("button");
     del.className = "log-actions"; del.style.border = "none"; del.style.background = "var(--bg)";
     del.style.width = "34px"; del.style.height = "34px"; del.style.borderRadius = "9px"; del.style.cursor = "pointer";
@@ -819,13 +838,16 @@ const rangeCal = {
         const iso = `${this.year}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
         const btn = document.createElement("button"); btn.type = "button"; btn.className = "rcal-day"; btn.textContent = d;
         const future = toDate(iso) > toDate(todayISO);
-        if (future) btn.classList.add("disabled");
+        if (future) { btn.classList.add("disabled"); btn.disabled = true; }
         if (iso === todayISO) btn.classList.add("today");
+        btn.setAttribute("aria-label", fmtDateFull(iso));
         const s = this.start, e = this.end;
+        let selected = false;
         if (s && e) {
-          if (iso === s || iso === e) btn.classList.add(iso === s ? "start" : "end");
+          if (iso === s || iso === e) { btn.classList.add(iso === s ? "start" : "end"); selected = true; }
           else if (toDate(iso) > toDate(s) && toDate(iso) < toDate(e)) btn.classList.add("inrange");
-        } else if (s && iso === s) btn.classList.add("start");
+        } else if (s && iso === s) { btn.classList.add("start"); selected = true; }
+        btn.setAttribute("aria-pressed", selected ? "true" : "false");
         if (!future) btn.onclick = () => this.pick(iso);
         grid.appendChild(btn);
       }
@@ -918,3 +940,8 @@ applyLock();
 render();
 renderLog();
 startIntroThenOnboarding();
+
+// Offline support for the installed app.
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("./sw.js").catch(() => { /* offline mode unavailable */ });
+}
