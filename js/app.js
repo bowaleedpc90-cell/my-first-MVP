@@ -742,42 +742,32 @@ $("#form-settings").onsubmit = (e) => {
 
 /* ============================================================ ONBOARDING */
 
+// Onboarding is two steps: (1) name + this year's past leaves, with the
+// live counter; (2) add-to-home-screen. The target (180) and weekend
+// (Fri/Sat) are fixed defaults — changeable later from settings, so no
+// profile step is shown.
 function startOnboardingIfNeeded() {
   if (state.onboarded) { $("#sheet-onboarding").classList.remove("open"); return; }
-  const p = state.profile;
-  $("#onb-name").value = p.full_name;
-  $("#onb-worktype").value = p.work_type;
-  $("#onb-ministry").value = p.ministry_type;
-  $("#onb-target").value = p.target_days;
-  renderWeekendChips("#onb-weekend", p.weekend_days);
+  $("#onb-name").value = state.profile.full_name;
+  fillLeaveTypeSelect($("#onb-leave-type"));
+  rangeCal.init("#onb-rcal", { year: state.profile.year, onChange: onbRangeChanged });
+  setRcalOpen(false);
   onbShowStep(1);
+  onbRangeChanged();
   $("#sheet-onboarding").classList.add("open");
 }
-$("#onb-worktype").onchange = () => {
-  const w = $("#onb-worktype").value;
-  const t = WORKTYPE_TARGET[w];
-  $("#onb-target-hint").textContent = t
-    ? (w === "teaching" ? "الافتراضي 135 للتعليمي — عدّله حسب جهتك." : "الافتراضي 180 للإداري — عدّله حسب جهتك.")
-    : "حدد الهدف يدوياً حسب نوع دوامك (لا يُفترض 180 تلقائياً).";
-  if (t) $("#onb-target").value = t;
-};
 
 const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
 const isAndroid = /Android/i.test(navigator.userAgent);
 
 function onbShowStep(n) {
-  $("#onb-s1").hidden = n !== 1;
-  $("#onb-s2").hidden = n !== 2;
-  $("#onb-s3").hidden = n !== 3;
+  $("#onb-s2").hidden = n !== 1;
+  $("#onb-s3").hidden = n !== 2;
   $("#onb-dot1").classList.toggle("on", n === 1);
   $("#onb-dot2").classList.toggle("on", n === 2);
-  $("#onb-dot3").classList.toggle("on", n === 3);
   if (n === 1) {
     $("#onb-title").textContent = "مرحباً بك في «١٨٠ يوم»";
-    $("#onb-sub").textContent = "إعداد سريع لطريقة الحساب — تقدر تعدّلها لاحقاً.";
-  } else if (n === 2) {
-    $("#onb-title").textContent = "إجازاتك وغياباتك هذه السنة";
-    $("#onb-sub").textContent = "خطوة ليكون عدّادك دقيقاً من البداية.";
+    $("#onb-sub").textContent = "أدخل اسمك وإجازاتك السابقة ليكون عدّادك دقيقاً من البداية.";
     onbRefreshStep2();
   } else {
     $("#onb-title").textContent = "أضِف التطبيق لجوالك";
@@ -793,26 +783,14 @@ function setInstallOS(os) {
 }
 document.querySelectorAll("#install-seg .seg-btn").forEach((b) => (b.onclick = () => setInstallOS(b.dataset.os)));
 
-// Step 1 -> apply profile and move to step 2
-$("#form-onboarding").onsubmit = (e) => {
-  e.preventDefault();
-  const wk = readWeekendChips("#onb-weekend");
-  Object.assign(state.profile, {
-    full_name: $("#onb-name").value.trim(),
-    work_type: $("#onb-worktype").value,
-    ministry_type: $("#onb-ministry").value,
-    target_days: Number($("#onb-target").value) || 180,
-    weekend_days: wk.length ? wk : ["friday", "saturday"],
-  });
-  saveState();
-  fillLeaveTypeSelect($("#onb-leave-type"));
-  rangeCal.init("#onb-rcal", { year: state.profile.year, onChange: onbRangeChanged });
-  setRcalOpen(false);
-  onbShowStep(2);
-  onbRangeChanged();
-};
+// The name field lives in step 1; Enter must not reload the page.
+$("#form-onboarding").onsubmit = (e) => e.preventDefault();
 
-$("#onb-back").onclick = () => onbShowStep(1);
+function onbSaveName() {
+  state.profile.full_name = $("#onb-name").value.trim();
+  saveState();
+  render();
+}
 
 /* ---- Booking-style range calendar (from–to in one scrollable calendar) ---- */
 const RCAL_WEEK = ["أحد", "اثن", "ثلا", "أرب", "خمي", "جمع", "سبت"];
@@ -947,14 +925,16 @@ function onbRefreshStep2() {
 
 // Step 2 -> step 3 (install), or finish directly if already installed
 $("#onb-next2").onclick = () => {
+  onbSaveName();
   if (isStandalone) { finishOnboarding(); return; }
   setInstallOS(isAndroid ? "android" : "ios");
-  onbShowStep(3);
+  onbShowStep(2);
 };
-$("#onb-back2").onclick = () => onbShowStep(2);
+$("#onb-back2").onclick = () => onbShowStep(1);
 $("#onb-done").onclick = finishOnboarding;
 
 function finishOnboarding() {
+  onbSaveName();
   state.onboarded = true;
   saveState();
   $("#sheet-onboarding").classList.remove("open");
