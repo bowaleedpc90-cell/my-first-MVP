@@ -45,8 +45,12 @@ const WEEKDAYS = [
 /* ---------------- Kuwait holidays for any year (auto-generated) ----------- */
 
 // Islamic holidays as (hijri month, hijri day, name) — converted to Gregorian
-// dates per year via the Umm al-Qura calendar. Marked تقديري because the
-// official dates follow moon sighting.
+// dates per year via the Kuwaiti tabular algorithm (islamic-civil), the same
+// arithmetic base as Kuwait's Al-Ojairi (العجيري) calendar. Validated against
+// the officially announced Kuwait 2026 dates (best match of all Intl islamic
+// calendar variants; Umm al-Qura is the Saudi reference and differs by a day
+// on several of them). Marked تقديري because official observance still
+// follows moon sighting and CSC announcements.
 const HIJRI_HOLIDAYS = [
   [1, 1, "رأس السنة الهجرية"],
   [3, 12, "المولد النبوي الشريف"],
@@ -54,7 +58,7 @@ const HIJRI_HOLIDAYS = [
   [10, 1, "عيد الفطر"], [10, 2, "عيد الفطر - ثاني أيام العيد"], [10, 3, "عيد الفطر - ثالث أيام العيد"],
   [12, 9, "وقفة عرفات"], [12, 10, "عيد الأضحى"], [12, 11, "عيد الأضحى - ثاني أيام العيد"], [12, 12, "عيد الأضحى - ثالث أيام العيد"],
 ];
-const HIJRI_FMT = new Intl.DateTimeFormat("en-u-ca-islamic-umalqura", { day: "numeric", month: "numeric" });
+const HIJRI_FMT = new Intl.DateTimeFormat("en-u-ca-islamic-civil", { day: "numeric", month: "numeric" });
 
 function kuwaitHolidays(year) {
   if (year === 2026) return DEFAULT_HOLIDAYS_2026.map((h) => ({ ...h }));
