@@ -443,6 +443,18 @@ header h1 small { display: block; font-size: 12.5px; font-weight: 400; color: va
 .pcal-grid .holiday { background: #dbeafe; color: #1d4ed8; font-weight: 700; }
 .pcal-grid .leave { background: #fee2e2; color: #b91c1c; font-weight: 700; }
 .pcal-grid .perm { background: #fef3c7; color: #b45309; font-weight: 700; }
+/* single-month print: one large grid + a detail list */
+.pcal-months.single { grid-template-columns: 1fr; }
+.pcal-months.single .pcal-month { padding: 12px; }
+.pcal-months.single .pcal-mname { font-size: 16px; margin-bottom: 8px; }
+.pcal-months.single .pcal-grid { gap: 3px; }
+.pcal-months.single .pcal-grid span { font-size: 13px; padding: 9px 0; border-radius: 6px; }
+.pcal-months.single .pcal-grid .wd { font-size: 9px; color: #9aa2b0; }
+.pcal-details { margin-top: 12px; border: 1px solid #e6e9f0; border-radius: 8px; padding: 10px 12px; }
+.pcal-details h2 { font-size: 12px; margin: 0 0 6px; }
+.pcal-details div { font-size: 10.5px; padding: 4px 0; border-bottom: 1px dashed #e6e9f0; }
+.pcal-details div:last-child { border-bottom: none; }
+
 .pcal-foot { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #e6e9f0; margin-top: 12px; padding-top: 8px; }
 .pcal-foot img { height: 30px; }
 .pcal-foot .d { font-size: 8.5px; color: #5b6472; text-align: start; line-height: 1.5; }
