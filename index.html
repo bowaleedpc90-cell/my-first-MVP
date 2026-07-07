@@ -2,7 +2,9 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <!-- Pinch-drift is prevented via CSS (touch-action/overflow); zoom stays
+       available for accessibility (WCAG 1.4.4). -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>١٨٠ يوم — مساعدك لتتبع استحقاق الأعمال الممتازة</title>
   <meta name="description" content="تتبّع أيام عملك الفعلية واضمن استحقاق مكافأة الأعمال الممتازة لموظفي الحكومة في الكويت — بدون أوراق." />
   <link rel="icon" type="image/png" href="assets/brand/app-180-192.png" />
@@ -34,7 +36,7 @@
   <!-- ===== App lock overlay ===== -->
   <div class="lock-screen" id="lock-screen" hidden>
     <div class="lock-box">
-      <img src="assets/brand/icon-192.png" alt="" width="56" height="56" />
+      <img src="assets/brand/app-180-192.png" alt="" width="56" height="56" />
       <h2>التطبيق مقفل</h2>
       <p>أدخل الرمز السري للمتابعة</p>
       <input type="password" id="lock-input" inputmode="numeric" maxlength="8" autocomplete="off" />
@@ -54,7 +56,7 @@
     </div>
   </div>
 
-  <div class="app" id="app-root">
+  <main class="app" id="app-root">
 
     <header>
       <h1>١٨٠ يوم <small>تتبع استحقاق الأعمال الممتازة</small></h1>
@@ -149,6 +151,7 @@
         <span><i class="dot leave"></i> إجازة</span>
         <span><i class="dot perm"></i> استئذان</span>
       </div>
+      <button type="button" class="btn btn-ghost mt" id="cal-print">🖨️ طباعة رزنامة السنة</button>
     </section>
 
     <!-- ============================= SIMULATOR ============================= -->
@@ -196,15 +199,15 @@
       </footer>
     </section>
 
-  </div>
+  </main>
 
   <!-- ===== bottom navigation ===== -->
-  <nav class="tabbar" id="tabbar">
-    <button class="tab active" data-view="home"><span>🏠</span>الرئيسية</button>
-    <button class="tab" data-view="calendar"><span>📅</span>التقويم</button>
-    <button class="tab" data-view="sim"><span>🧮</span>المحاكي</button>
-    <button class="tab" data-view="log"><span>📋</span>السجل</button>
-    <button class="tab" data-view="more"><span>⋯</span>المزيد</button>
+  <nav class="tabbar" id="tabbar" aria-label="التنقل الرئيسي">
+    <button class="tab active" data-view="home" aria-current="page"><span aria-hidden="true">🏠</span>الرئيسية</button>
+    <button class="tab" data-view="calendar"><span aria-hidden="true">📅</span>التقويم</button>
+    <button class="tab" data-view="sim"><span aria-hidden="true">🧮</span>المحاكي</button>
+    <button class="tab" data-view="log"><span aria-hidden="true">📋</span>السجل</button>
+    <button class="tab" data-view="more"><span aria-hidden="true">⋯</span>المزيد</button>
   </nav>
 
   <!-- ===== toast ===== -->
@@ -269,13 +272,19 @@
           <select id="onb-leave-type"></select>
         </div>
         <div class="field">
-          <label>حدد الفترة (اختر يوم البداية ثم يوم النهاية)</label>
-          <div class="rcal" id="onb-rcal"></div>
-          <p class="rcal-summary" id="onb-rcal-summary"></p>
+          <label id="onb-rcal-lbl">الفترة</label>
+          <button type="button" class="rcal-toggle" id="onb-rcal-toggle" aria-expanded="false" aria-labelledby="onb-rcal-lbl">
+            <span aria-hidden="true">📅</span>
+            <b id="onb-rcal-label">اضغط لاختيار الفترة</b>
+            <i id="onb-rcal-chev" aria-hidden="true">▾</i>
+          </button>
+          <div class="rcal" id="onb-rcal" hidden></div>
+          <p class="rcal-summary" id="onb-rcal-summary" hidden></p>
         </div>
         <p class="preview" id="onb-leave-preview"></p>
         <button type="button" class="btn btn-ghost" id="onb-leave-add">＋ أضف للسجل</button>
         <div id="onb-leave-list" class="mt"></div>
+        <button type="button" class="btn btn-ghost" id="onb-print" hidden>🖨️ طباعة الرزنامة</button>
         <button type="button" class="btn btn-primary" id="onb-next2">التالي ←</button>
         <button type="button" class="btn btn-ghost" id="onb-back">رجوع</button>
         <p class="note">ما عندك إجازات سابقة؟ اضغط «التالي» مباشرة.</p>
@@ -465,6 +474,9 @@
       <p class="note">الهدف الافتراضي 180 يوم للإداري وليس قاعدة ثابتة — عدّله حسب نوع دوامك وجهتك.</p>
     </form>
   </div>
+
+  <!-- printable year calendar (populated on demand, print-only) -->
+  <div id="print-area" aria-hidden="true"></div>
 
   <script type="module" src="js/app.js"></script>
 </body>

@@ -1,6 +1,6 @@
 import {
   computeStats, simulateLeave, workdaysBetween, calculateExcludedWorkdays,
-  monthlyPermissionUsage, toISO, toDate, addDaysISO, RULES_LAST_UPDATED,
+  monthlyPermissionUsage, toISO, toDate, addDaysISO,
 } from "./engine.js";
 
 /* ============================================================ constants */
@@ -98,7 +98,16 @@ function loadState() {
   return defaultState();
 }
 
-function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // iOS Safari Private Mode or full storage: writes throw — tell the user
+    // instead of failing silently. Deferred so it overrides any success
+    // toast the caller shows in the same tick.
+    setTimeout(() => toast("تعذّر الحفظ — قد يكون التصفح الخاص مفعّلاً أو مساحة التخزين ممتلئة ⚠️"), 0);
+  }
+}
 
 let state = loadState();
 const $ = (s) => document.querySelector(s);
@@ -108,9 +117,12 @@ const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 
 const holidayDates = () => state.holidays.map((h) => h.date);
 
 let calYear, calMonth; // calendar view state
-let lastAction = null; // for undo
 
 /* ============================================================ helpers */
+
+// Escape user-entered text before inserting into innerHTML templates.
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
 function fmtDate(iso) {
   return toDate(iso).toLocaleDateString("ar-KW", { day: "numeric", month: "long" });
@@ -182,7 +194,12 @@ function showInfo(title, html) {
 
 function switchView(view) {
   $$(".view").forEach((v) => (v.hidden = v.id !== `view-${view}`));
-  $$(".tab").forEach((t) => t.classList.toggle("active", t.dataset.view === view));
+  $$(".tab").forEach((t) => {
+    const active = t.dataset.view === view;
+    t.classList.toggle("active", active);
+    if (active) t.setAttribute("aria-current", "page");
+    else t.removeAttribute("aria-current");
+  });
   window.scrollTo(0, 0);
   if (view === "calendar") renderCalendar();
   if (view === "log") renderLog();
@@ -410,7 +427,7 @@ function renderLog() {
       el.innerHTML = `
         <span class="log-emoji">${t.emoji}</span>
         <span class="log-body">
-          <strong>${t.label}${item.note ? " · " + item.note : ""}</strong>
+          <strong>${t.label}${item.note ? " · " + esc(item.note) : ""}</strong>
           <small>${range} · خصم ${imp.total} يوم عمل</small>
           ${impactLine}
         </span>`;
@@ -486,6 +503,8 @@ function renderCalendar() {
     const cell = document.createElement("button");
     cell.className = `cal-cell ${cls}${iso === todayISO ? " today" : ""}`;
     cell.innerHTML = `${d}${isPerm && isLeave ? '<i class="cdot" style="background:var(--yellow)"></i>' : ""}`;
+    const dayKind = isLeave ? "إجازة" : isHol ? "عطلة رسمية" : isWknd ? "راحة" : "يوم عمل";
+    cell.setAttribute("aria-label", `${fmtDateFull(iso)} — ${dayKind}${isPerm ? "، استئذان" : ""}`);
     cell.onclick = () => showDayDetail(iso, { isWknd, isHol, isLeave, isPerm, holName: holidayMap.get(iso) });
     grid.appendChild(cell);
   }
@@ -503,7 +522,7 @@ function showDayDetail(iso, info) {
   rows.push(`<div class="rrow"><b>يوم عمل؟</b><span>${(!info.isWknd && !info.isHol) ? "نعم" : "لا"}</span></div>`);
   rows.push(`<div class="rrow"><b>يدخل في الحسبة؟</b><span>${counted ? "نعم ✅" : "لا ❌"}</span></div>`);
   if (info.isWknd) rows.push(`<div class="rrow"><b>السبب</b><span>راحة أسبوعية</span></div>`);
-  if (info.isHol) rows.push(`<div class="rrow"><b>عطلة رسمية</b><span>${info.holName || "—"}</span></div>`);
+  if (info.isHol) rows.push(`<div class="rrow"><b>عطلة رسمية</b><span>${esc(info.holName || "—")}</span></div>`);
   if (info.isLeave) rows.push(`<div class="rrow"><b>إجازة مسجلة</b><span>نعم — مستبعد من الحسبة</span></div>`);
   if (info.isPerm) rows.push(`<div class="rrow"><b>استئذان</b><span>يوجد استئذان مسجل</span></div>`);
   showInfo("تفاصيل اليوم", `<div class="report">${rows.join("")}</div>`);
@@ -574,7 +593,7 @@ function openReport() {
   const { rows } = buildReport();
   $("#report-body").innerHTML =
     `<h4>تقرير متابعة الأعمال الممتازة</h4>` +
-    rows.map(([k, v]) => `<div class="rrow"><b>${k}</b><span>${v}</span></div>`).join("");
+    rows.map(([k, v]) => `<div class="rrow"><b>${k}</b><span>${esc(v)}</span></div>`).join("");
   openSheet("#sheet-report");
 }
 $("#m-report").onclick = openReport;
@@ -628,7 +647,7 @@ function renderHolidays() {
   for (const h of [...state.holidays].sort((a, b) => a.date.localeCompare(b.date))) {
     const el = document.createElement("div");
     el.className = "log-item";
-    el.innerHTML = `<span class="log-emoji">🗓️</span><span class="log-body"><strong>${h.name}</strong><small>${fmtDateFull(h.date)}</small></span>`;
+    el.innerHTML = `<span class="log-emoji">🗓️</span><span class="log-body"><strong>${esc(h.name)}</strong><small>${fmtDateFull(h.date)}</small></span>`;
     const del = document.createElement("button");
     del.className = "log-actions"; del.style.border = "none"; del.style.background = "var(--bg)";
     del.style.width = "34px"; del.style.height = "34px"; del.style.borderRadius = "9px"; del.style.cursor = "pointer";
@@ -769,6 +788,7 @@ $("#form-onboarding").onsubmit = (e) => {
   saveState();
   fillLeaveTypeSelect($("#onb-leave-type"));
   rangeCal.init("#onb-rcal", { year: state.profile.year, onChange: onbRangeChanged });
+  setRcalOpen(false);
   onbShowStep(2);
   onbRangeChanged();
 };
@@ -819,13 +839,16 @@ const rangeCal = {
         const iso = `${this.year}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
         const btn = document.createElement("button"); btn.type = "button"; btn.className = "rcal-day"; btn.textContent = d;
         const future = toDate(iso) > toDate(todayISO);
-        if (future) btn.classList.add("disabled");
+        if (future) { btn.classList.add("disabled"); btn.disabled = true; }
         if (iso === todayISO) btn.classList.add("today");
+        btn.setAttribute("aria-label", fmtDateFull(iso));
         const s = this.start, e = this.end;
+        let selected = false;
         if (s && e) {
-          if (iso === s || iso === e) btn.classList.add(iso === s ? "start" : "end");
+          if (iso === s || iso === e) { btn.classList.add(iso === s ? "start" : "end"); selected = true; }
           else if (toDate(iso) > toDate(s) && toDate(iso) < toDate(e)) btn.classList.add("inrange");
-        } else if (s && iso === s) btn.classList.add("start");
+        } else if (s && iso === s) { btn.classList.add("start"); selected = true; }
+        btn.setAttribute("aria-pressed", selected ? "true" : "false");
         if (!future) btn.onclick = () => this.pick(iso);
         grid.appendChild(btn);
       }
@@ -835,25 +858,36 @@ const rangeCal = {
   },
 };
 
+// Collapsible calendar: closed by default, opens on tap for a tidy sheet.
+function setRcalOpen(open) {
+  $("#onb-rcal").hidden = !open;
+  $("#onb-rcal-summary").hidden = !open && !rangeCal.start;
+  $("#onb-rcal-toggle").setAttribute("aria-expanded", open ? "true" : "false");
+}
+$("#onb-rcal-toggle").onclick = () => setRcalOpen($("#onb-rcal").hidden);
+
 function onbRangeChanged() {
   const { start, end } = rangeCal.getRange();
   if (!start) {
+    $("#onb-rcal-label").textContent = "اضغط لاختيار الفترة";
     $("#onb-rcal-summary").textContent = "اختر يوم البداية ثم يوم النهاية (أو يوماً واحداً ثم «أضف»).";
     $("#onb-leave-preview").textContent = "";
     return;
   }
   const days = workdaysBetween(start, end, state.profile.weekend_days, holidayDates());
   const range = start === end ? fmtDateFull(start) : `${fmtDate(start)} ← ${fmtDate(end)}`;
+  $("#onb-rcal-label").textContent = range;
   $("#onb-rcal-summary").textContent = `الفترة المختارة: ${range}`;
   $("#onb-leave-preview").textContent = `سيتم خصم ${days} يوم عمل.`;
 }
 
 $("#onb-leave-add").onclick = () => {
   const { start, end } = rangeCal.getRange();
-  if (!start) return;
+  if (!start) { setRcalOpen(true); return; }
   state.leaves.push({ id: uid(), entry_type: $("#onb-leave-type").value, start_date: start, end_date: end, note: "" });
   saveState();
   rangeCal.clear();
+  setRcalOpen(false);
   onbRefreshStep2();
   render();
 };
@@ -862,6 +896,7 @@ function onbRefreshStep2() {
   // live completed-days counter
   const s = stats();
   $("#onb-count").innerHTML = `<small>أيام عملك المنجزة حتى اليوم</small><b>${s.completedDays}</b><small>من ${s.targetDays} يوم</small>`;
+  $("#onb-print").hidden = state.leaves.length === 0;
   // list of entered leaves
   const list = $("#onb-leave-list");
   const items = state.leaves.slice().sort((a, b) => b.start_date.localeCompare(a.start_date));
@@ -912,9 +947,92 @@ $("#intro-start").onclick = () => {
   startOnboardingIfNeeded();
 };
 
+/* ============================================================ printable year calendar */
+
+const PCAL_WD = ["ح", "ن", "ث", "ر", "خ", "ج", "س"]; // أحد..سبت (compact)
+
+function printYearCalendar() {
+  const p = state.profile;
+  const s = stats();
+  const ws = new Set(p.weekend_days);
+  const holidaySet = new Set(holidayDates());
+  const leaveSet = calculateExcludedWorkdays(state.leaves, p.weekend_days, holidayDates());
+  const permDates = new Set(state.permissions.map((x) => x.date));
+
+  let months = "";
+  for (let m = 0; m < 12; m++) {
+    const name = new Date(p.year, m, 1).toLocaleDateString("ar-KW", { month: "long" });
+    let cells = PCAL_WD.map((w) => `<span class="wd">${w}</span>`).join("");
+    const startDow = new Date(p.year, m, 1).getDay();
+    for (let i = 0; i < startDow; i++) cells += "<span></span>";
+    const dim = new Date(p.year, m + 1, 0).getDate();
+    for (let d = 1; d <= dim; d++) {
+      const iso = `${p.year}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      const dow = new Date(p.year, m, d).getDay();
+      let cls = "";
+      if (leaveSet.has(iso)) cls = "leave";
+      else if (holidaySet.has(iso)) cls = "holiday";
+      else if (ws.has(WEEKDAYS[dow].key)) cls = "rest";
+      if (permDates.has(iso) && !cls) cls = "perm";
+      cells += `<span class="${cls}">${d}</span>`;
+    }
+    months += `<div class="pcal-month"><div class="pcal-mname">${name}</div><div class="pcal-grid">${cells}</div></div>`;
+  }
+
+  $("#print-area").innerHTML = `
+    <div class="pcal">
+      <div class="pcal-head">
+        <div class="t">
+          <h1>رزنامة «١٨٠ يوم» — ${p.year}</h1>
+          <p>${esc(p.full_name || "")}${p.full_name ? " · " : ""}${worktypeLabel(p.work_type)} · الهدف: ${p.target_days} يوم عمل</p>
+        </div>
+        <img class="appicon" src="assets/brand/app-180-192.png" alt="" />
+      </div>
+      <div class="pcal-summary">
+        <div><b>${s.completedDays}</b><small>يوم منجز</small></div>
+        <div><b>${s.remainingToTarget}</b><small>متبقٍ للهدف</small></div>
+        <div><b>${s.safetyBuffer}</b><small>رصيد الأمان</small></div>
+        <div><b>${s.totalLeaveWorkdays}</b><small>أيام الإجازات</small></div>
+      </div>
+      <div class="pcal-legend">
+        <span><i style="background:#fee2e2"></i>إجازة/غياب</span>
+        <span><i style="background:#dbeafe"></i>عطلة رسمية</span>
+        <span><i style="background:#eef1f6"></i>راحة أسبوعية</span>
+        <span><i style="background:#fef3c7"></i>استئذان</span>
+      </div>
+      <div class="pcal-months">${months}</div>
+      <div class="pcal-foot">
+        <div class="d">
+          رزنامة إرشادية وليست مستنداً رسمياً — طُبعت في ${fmtDateFull(todayISO)}.<br>
+          تطوير X Star Software · xstarkw.com
+        </div>
+        <img src="assets/brand/logo-horizontal.png" alt="X Star Software" />
+      </div>
+    </div>`;
+
+  document.body.classList.add("print-cal");
+  const cleanup = () => {
+    document.body.classList.remove("print-cal");
+    window.removeEventListener("afterprint", cleanup);
+  };
+  window.addEventListener("afterprint", cleanup);
+  window.print();
+  // iOS fires print() async; the snapshot is taken at call time, so a
+  // delayed cleanup is safe even if afterprint never fires.
+  setTimeout(cleanup, 2000);
+}
+
+$("#onb-print").onclick = printYearCalendar;
+$("#cal-print").onclick = printYearCalendar;
+
 /* ============================================================ boot */
 
 applyLock();
 render();
 renderLog();
 startIntroThenOnboarding();
+
+// Offline support for the installed app.
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("./sw.js").catch(() => { /* offline mode unavailable */ });
+}
