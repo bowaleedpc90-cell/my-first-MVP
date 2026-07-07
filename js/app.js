@@ -98,14 +98,21 @@ function loadState() {
   return defaultState();
 }
 
+let storageBroken = false;
 function saveState() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    return true;
   } catch {
-    // iOS Safari Private Mode or full storage: writes throw — tell the user
-    // instead of failing silently. Deferred so it overrides any success
-    // toast the caller shows in the same tick.
-    setTimeout(() => toast("تعذّر الحفظ — قد يكون التصفح الخاص مفعّلاً أو مساحة التخزين ممتلئة ⚠️"), 0);
+    // iOS Safari Private Mode or full storage: writes throw. Show a
+    // persistent banner (not a toast) so the user is never misled into
+    // thinking data is saved, and so we don't clobber a delete's undo toast.
+    if (!storageBroken) {
+      storageBroken = true;
+      const el = document.getElementById("storage-warning");
+      if (el) el.hidden = false;
+    }
+    return false;
   }
 }
 
@@ -124,12 +131,12 @@ let calYear, calMonth; // calendar view state
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-function fmtDate(iso) {
-  return toDate(iso).toLocaleDateString("ar-KW", { day: "numeric", month: "long" });
-}
-function fmtDateFull(iso) {
-  return toDate(iso).toLocaleDateString("ar-KW", { day: "numeric", month: "long", year: "numeric" });
-}
+// Hoisted formatters — reused across the calendars' per-day labels instead of
+// building a fresh locale formatter on every cell.
+const FMT_DATE = new Intl.DateTimeFormat("ar-KW", { day: "numeric", month: "long" });
+const FMT_DATE_FULL = new Intl.DateTimeFormat("ar-KW", { day: "numeric", month: "long", year: "numeric" });
+function fmtDate(iso) { return FMT_DATE.format(toDate(iso)); }
+function fmtDateFull(iso) { return FMT_DATE_FULL.format(toDate(iso)); }
 
 function stats() {
   const p = state.profile;
@@ -427,7 +434,7 @@ function renderLog() {
       el.innerHTML = `
         <span class="log-emoji">${t.emoji}</span>
         <span class="log-body">
-          <strong>${t.label}${item.note ? " · " + esc(item.note) : ""}</strong>
+          <strong>${esc(t.label)}${item.note ? " · " + esc(item.note) : ""}</strong>
           <small>${range} · خصم ${imp.total} يوم عمل</small>
           ${impactLine}
         </span>`;
@@ -494,11 +501,7 @@ function renderCalendar() {
     const isLeave = leaveSet.has(iso);
     const isPerm = permDates.has(iso);
 
-    let cls = "work";
-    if (isLeave) cls = "leave";
-    else if (isHol) cls = "holiday";
-    else if (isWknd) cls = "rest";
-    if (isPerm && !isLeave) cls = "perm";
+    const cls = classifyDay({ isWknd, isHol, isLeave, isPerm });
 
     const cell = document.createElement("button");
     cell.className = `cal-cell ${cls}${iso === todayISO ? " today" : ""}`;
@@ -511,6 +514,18 @@ function renderCalendar() {
 }
 function wsHas(wsSet, dow) {
   const name = WEEKDAYS[dow].key; return wsSet.has(name);
+}
+// Single source of truth for day coloring — used by the on-screen calendar
+// and the printable year calendar so they never disagree. Precedence:
+// leave > holiday > weekend rest > workday; a permission overrides everything
+// except a leave.
+function classifyDay({ isWknd, isHol, isLeave, isPerm }) {
+  let cls = "work";
+  if (isLeave) cls = "leave";
+  else if (isHol) cls = "holiday";
+  else if (isWknd) cls = "rest";
+  if (isPerm && !isLeave) cls = "perm";
+  return cls;
 }
 $("#cal-prev").onclick = () => { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } renderCalendar(); };
 $("#cal-next").onclick = () => { calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } renderCalendar(); };
@@ -805,8 +820,13 @@ const rangeCal = {
     const now = toDate(todayISO);
     this.lastMonth = (year === now.getFullYear()) ? now.getMonth() : 11;
     this.render();
-    const months = this.container.querySelectorAll(".rcal-month");
-    if (months.length) this.container.scrollTop = months[months.length - 1].offsetTop - 6;
+  },
+  // Scroll to the latest month (which is the current month — months run
+  // Jan..current). Scrolling to the bottom is offset-parent-independent and
+  // must run while the container is visible (called from setRcalOpen(true)).
+  scrollToCurrent() {
+    const c = this.container; if (!c) return;
+    c.scrollTop = c.scrollHeight;
   },
   pick(iso) {
     if (this.start && !this.end) {
@@ -843,11 +863,11 @@ const rangeCal = {
         if (iso === todayISO) btn.classList.add("today");
         btn.setAttribute("aria-label", fmtDateFull(iso));
         const s = this.start, e = this.end;
-        let selected = false;
+        const selected = iso === s || (!!e && iso === e);
         if (s && e) {
-          if (iso === s || iso === e) { btn.classList.add(iso === s ? "start" : "end"); selected = true; }
+          if (selected) btn.classList.add(iso === s ? "start" : "end");
           else if (toDate(iso) > toDate(s) && toDate(iso) < toDate(e)) btn.classList.add("inrange");
-        } else if (s && iso === s) { btn.classList.add("start"); selected = true; }
+        } else if (selected) btn.classList.add("start");
         btn.setAttribute("aria-pressed", selected ? "true" : "false");
         if (!future) btn.onclick = () => this.pick(iso);
         grid.appendChild(btn);
@@ -861,8 +881,11 @@ const rangeCal = {
 // Collapsible calendar: closed by default, opens on tap for a tidy sheet.
 function setRcalOpen(open) {
   $("#onb-rcal").hidden = !open;
-  $("#onb-rcal-summary").hidden = !open && !rangeCal.start;
+  // Summary shows only while the calendar is open (the collapsed toggle
+  // already displays the selected range, so it isn't repeated below).
+  $("#onb-rcal-summary").hidden = !open;
   $("#onb-rcal-toggle").setAttribute("aria-expanded", open ? "true" : "false");
+  if (open) requestAnimationFrame(() => rangeCal.scrollToCurrent());
 }
 $("#onb-rcal-toggle").onclick = () => setRcalOpen($("#onb-rcal").hidden);
 
@@ -908,7 +931,7 @@ function onbRefreshStep2() {
     const range = it.start_date === (it.end_date || it.start_date) ? fmtDate(it.start_date) : `${fmtDate(it.start_date)} ← ${fmtDate(it.end_date)}`;
     const el = document.createElement("div");
     el.className = "log-item";
-    el.innerHTML = `<span class="log-emoji">${t.emoji}</span><span class="log-body"><strong>${t.label}</strong><small>${range} · خصم ${days} يوم</small></span>`;
+    el.innerHTML = `<span class="log-emoji">${t.emoji}</span><span class="log-body"><strong>${esc(t.label)}</strong><small>${range} · خصم ${days} يوم</small></span>`;
     const del = document.createElement("button");
     del.className = "log-actions"; del.style.cssText = "border:none;background:var(--bg);width:34px;height:34px;border-radius:9px;cursor:pointer";
     del.textContent = "✕";
@@ -953,10 +976,11 @@ const PCAL_WD = ["ح", "ن", "ث", "ر", "خ", "ج", "س"]; // أحد..سبت (c
 
 function printYearCalendar() {
   const p = state.profile;
+  const hols = holidayDates();
   const s = stats();
   const ws = new Set(p.weekend_days);
-  const holidaySet = new Set(holidayDates());
-  const leaveSet = calculateExcludedWorkdays(state.leaves, p.weekend_days, holidayDates());
+  const holidaySet = new Set(hols);
+  const leaveSet = calculateExcludedWorkdays(state.leaves, p.weekend_days, hols);
   const permDates = new Set(state.permissions.map((x) => x.date));
 
   let months = "";
@@ -969,11 +993,10 @@ function printYearCalendar() {
     for (let d = 1; d <= dim; d++) {
       const iso = `${p.year}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
       const dow = new Date(p.year, m, d).getDay();
-      let cls = "";
-      if (leaveSet.has(iso)) cls = "leave";
-      else if (holidaySet.has(iso)) cls = "holiday";
-      else if (ws.has(WEEKDAYS[dow].key)) cls = "rest";
-      if (permDates.has(iso) && !cls) cls = "perm";
+      // Same precedence as the on-screen calendar (classifyDay) so the
+      // printed sheet never disagrees with the app; "work" prints plain.
+      let cls = classifyDay({ isWknd: ws.has(WEEKDAYS[dow].key), isHol: holidaySet.has(iso), isLeave: leaveSet.has(iso), isPerm: permDates.has(iso) });
+      if (cls === "work") cls = "";
       cells += `<span class="${cls}">${d}</span>`;
     }
     months += `<div class="pcal-month"><div class="pcal-mname">${name}</div><div class="pcal-grid">${cells}</div></div>`;
@@ -1011,15 +1034,22 @@ function printYearCalendar() {
     </div>`;
 
   document.body.classList.add("print-cal");
+  const mql = window.matchMedia("print");
+  let done = false;
   const cleanup = () => {
+    if (done) return;
+    done = true;
     document.body.classList.remove("print-cal");
+    $("#print-area").innerHTML = ""; // drop the ~550-node year grid after printing
     window.removeEventListener("afterprint", cleanup);
+    if (mql.removeEventListener) mql.removeEventListener("change", onMedia);
   };
+  // Clean up only when the print media session actually ends (leaving print
+  // mode), not on a fixed timer that could strip the layout mid-preview on iOS.
+  const onMedia = (e) => { if (!e.matches) cleanup(); };
   window.addEventListener("afterprint", cleanup);
+  if (mql.addEventListener) mql.addEventListener("change", onMedia);
   window.print();
-  // iOS fires print() async; the snapshot is taken at call time, so a
-  // delayed cleanup is safe even if afterprint never fires.
-  setTimeout(cleanup, 2000);
 }
 
 $("#onb-print").onclick = printYearCalendar;

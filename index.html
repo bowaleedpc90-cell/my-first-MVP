@@ -2,9 +2,11 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="utf-8" />
-  <!-- Pinch-drift is prevented via CSS (touch-action/overflow); zoom stays
-       available for accessibility (WCAG 1.4.4). -->
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <!-- Zoom is intentionally locked for the installed app (client request: no
+       accidental pinch-zoom/drift). iOS standalone PWAs honor user-scalable=no.
+       CSS (overflow-x/overscroll-behavior) additionally guards against drift.
+       Note: this trades off WCAG 1.4.4 zoom — documented in handover. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <title>١٨٠ يوم — مساعدك لتتبع استحقاق الأعمال الممتازة</title>
   <meta name="description" content="تتبّع أيام عملك الفعلية واضمن استحقاق مكافأة الأعمال الممتازة لموظفي الحكومة في الكويت — بدون أوراق." />
   <link rel="icon" type="image/png" href="assets/brand/app-180-192.png" />
@@ -68,6 +70,10 @@
         <button class="icon-btn" id="btn-settings" aria-label="الإعدادات">⚙️</button>
       </div>
     </header>
+
+    <div class="storage-warning" id="storage-warning" role="alert" hidden>
+      ⚠️ تعذّر حفظ البيانات على هذا الجهاز — قد يكون <b>التصفح الخاص</b> مفعّلاً أو مساحة التخزين ممتلئة. لن تُحفظ إدخالاتك بعد إغلاق التطبيق.
+    </div>
 
     <!-- ============================= HOME ============================= -->
     <section class="view" id="view-home">
@@ -276,7 +282,7 @@
           <button type="button" class="rcal-toggle" id="onb-rcal-toggle" aria-expanded="false" aria-labelledby="onb-rcal-lbl">
             <span aria-hidden="true">📅</span>
             <b id="onb-rcal-label">اضغط لاختيار الفترة</b>
-            <i id="onb-rcal-chev" aria-hidden="true">▾</i>
+            <i aria-hidden="true">▾</i>
           </button>
           <div class="rcal" id="onb-rcal" hidden></div>
           <p class="rcal-summary" id="onb-rcal-summary" hidden></p>
