@@ -8,7 +8,8 @@ import {
 const STORAGE_KEY = "days180.v2";
 const LEGACY_KEY = "days180.v1";
 
-// العطل الرسمية في دولة الكويت لعام 2026 وفق إعلانات ديوان الخدمة المدنية.
+// العطل الرسمية في دولة الكويت لعام 2026 وفق إعلانات ديوان الخدمة المدنية
+// (قائمة مؤكدة). السنوات الأخرى تُولَّد تلقائياً في kuwaitHolidays().
 const DEFAULT_HOLIDAYS_2026 = [
   { date: "2026-01-01", name: "رأس السنة الميلادية" },
   { date: "2026-01-18", name: "الإسراء والمعراج" },
@@ -41,6 +42,41 @@ const WEEKDAYS = [
   { key: "saturday", label: "السبت" },
 ];
 
+/* ---------------- Kuwait holidays for any year (auto-generated) ----------- */
+
+// Islamic holidays as (hijri month, hijri day, name) — converted to Gregorian
+// dates per year via the Umm al-Qura calendar. Marked تقديري because the
+// official dates follow moon sighting.
+const HIJRI_HOLIDAYS = [
+  [1, 1, "رأس السنة الهجرية"],
+  [3, 12, "المولد النبوي الشريف"],
+  [7, 27, "الإسراء والمعراج"],
+  [10, 1, "عيد الفطر"], [10, 2, "عيد الفطر - ثاني أيام العيد"], [10, 3, "عيد الفطر - ثالث أيام العيد"],
+  [12, 9, "وقفة عرفات"], [12, 10, "عيد الأضحى"], [12, 11, "عيد الأضحى - ثاني أيام العيد"], [12, 12, "عيد الأضحى - ثالث أيام العيد"],
+];
+const HIJRI_FMT = new Intl.DateTimeFormat("en-u-ca-islamic-umalqura", { day: "numeric", month: "numeric" });
+
+function kuwaitHolidays(year) {
+  if (year === 2026) return DEFAULT_HOLIDAYS_2026.map((h) => ({ ...h }));
+  const out = [
+    { date: `${year}-01-01`, name: "رأس السنة الميلادية" },
+    { date: `${year}-02-25`, name: "العيد الوطني" },
+    { date: `${year}-02-26`, name: "عيد التحرير" },
+  ];
+  const d = new Date(year, 0, 1);
+  while (d.getFullYear() === year) {
+    const parts = HIJRI_FMT.formatToParts(d);
+    const hm = Number(parts.find((p) => p.type === "month").value);
+    const hd = Number(parts.find((p) => p.type === "day").value);
+    for (const [m, dd, name] of HIJRI_HOLIDAYS) {
+      if (m === hm && dd === hd) out.push({ date: toISO(d), name: `${name} (تقديري)` });
+    }
+    d.setDate(d.getDate() + 1);
+  }
+  out.sort((a, b) => a.date.localeCompare(b.date));
+  return out;
+}
+
 const WORKTYPE_TARGET = { admin_morning: 180, admin_evening: 180, teaching: 135 };
 
 /* ============================================================ state */
@@ -63,7 +99,7 @@ function defaultState() {
     },
     leaves: [],
     permissions: [],
-    holidays: DEFAULT_HOLIDAYS_2026,
+    holidays: kuwaitHolidays(new Date().getFullYear()),
   };
 }
 
@@ -117,6 +153,18 @@ function saveState() {
 }
 
 let state = loadState();
+
+// تحديث تلقائي مع بداية كل سنة: يبدأ عدّاد السنة الجديدة وتُحمَّل عطلها
+// الرسمية تلقائياً (السجلات القديمة تبقى محفوظة في السجل).
+(function autoRollYear() {
+  const nowYear = new Date().getFullYear();
+  if (state.profile.year < nowYear) {
+    state.profile.year = nowYear;
+    state.holidays = kuwaitHolidays(nowYear);
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch { /* surfaced later by saveState */ }
+  }
+})();
+
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
 const todayISO = toISO(new Date());
@@ -725,6 +773,7 @@ $("#set-worktype").onchange = () => {
 $("#form-settings").onsubmit = (e) => {
   e.preventDefault();
   const wk = readWeekendChips("#set-weekend");
+  const prevYear = state.profile.year;
   Object.assign(state.profile, {
     full_name: $("#set-name").value.trim(),
     work_type: $("#set-worktype").value,
@@ -736,8 +785,13 @@ $("#form-settings").onsubmit = (e) => {
     monthly_perm_hours: Number($("#set-perm-hours").value) || 0,
     monthly_perm_count: Number($("#set-perm-count").value) || 0,
   });
+  if (state.profile.year !== prevYear) {
+    state.holidays = kuwaitHolidays(state.profile.year);
+    toast(`تم تحديث العطل الرسمية لسنة ${state.profile.year} — التقديرية قابلة للتعديل`);
+  } else {
+    toast("تم حفظ الإعدادات ✅");
+  }
   saveState(); closeSheets(); calYear = null; render(); renderLog();
-  toast("تم حفظ الإعدادات ✅");
 };
 
 /* ============================================================ ONBOARDING */
@@ -954,11 +1008,13 @@ $("#intro-start").onclick = () => {
   startOnboardingIfNeeded();
 };
 
-/* ============================================================ printable year calendar */
+/* ============================================================ printable calendar */
 
 const PCAL_WD = ["ح", "ن", "ث", "ر", "خ", "ج", "س"]; // أحد..سبت (compact)
 
-function printYearCalendar() {
+// monthIdx: null = full year, 0-11 = a single month (larger grid + a detail
+// list of that month's holidays, leaves, and permissions).
+function printCalendar(monthIdx = null) {
   const p = state.profile;
   const hols = holidayDates();
   const s = stats();
@@ -966,9 +1022,11 @@ function printYearCalendar() {
   const holidaySet = new Set(hols);
   const leaveSet = calculateExcludedWorkdays(state.leaves, p.weekend_days, hols);
   const permDates = new Set(state.permissions.map((x) => x.date));
+  const single = monthIdx !== null;
+  const monthList = single ? [monthIdx] : Array.from({ length: 12 }, (_, i) => i);
 
   let months = "";
-  for (let m = 0; m < 12; m++) {
+  for (const m of monthList) {
     const name = new Date(p.year, m, 1).toLocaleDateString("ar-KW", { month: "long" });
     let cells = PCAL_WD.map((w) => `<span class="wd">${w}</span>`).join("");
     const startDow = new Date(p.year, m, 1).getDay();
@@ -986,11 +1044,35 @@ function printYearCalendar() {
     months += `<div class="pcal-month"><div class="pcal-mname">${name}</div><div class="pcal-grid">${cells}</div></div>`;
   }
 
+  // Single-month extras: a dated list of that month's holidays/leaves/permissions.
+  let details = "";
+  if (single) {
+    const ym = `${p.year}-${String(monthIdx + 1).padStart(2, "0")}`;
+    const rows = [];
+    for (const h of state.holidays) if (h.date.startsWith(ym)) rows.push([h.date, `🗓️ ${esc(h.name)}`]);
+    for (const l of state.leaves) {
+      const end = l.end_date || l.start_date;
+      if (l.start_date.slice(0, 7) <= ym && end.slice(0, 7) >= ym) {
+        const t = LEAVE_TYPES[l.entry_type] || { label: l.entry_type };
+        const range = l.start_date === end ? fmtDate(l.start_date) : `${fmtDate(l.start_date)} ← ${fmtDate(end)}`;
+        rows.push([l.start_date, `${esc(t.label)} · ${range}`]);
+      }
+    }
+    for (const pm of state.permissions) if (pm.date.startsWith(ym)) rows.push([pm.date, `⏱️ استئذان ${pm.hours} ساعة · ${fmtDate(pm.date)}`]);
+    rows.sort((a, b) => a[0].localeCompare(b[0]));
+    if (rows.length) {
+      details = `<div class="pcal-details"><h2>تفاصيل الشهر</h2>${rows.map(([, txt]) => `<div>${txt}</div>`).join("")}</div>`;
+    }
+  }
+  const title = single
+    ? `رزنامة ${new Date(p.year, monthIdx, 1).toLocaleDateString("ar-KW", { month: "long" })} ${p.year}`
+    : `رزنامة «١٨٠ يوم» — ${p.year}`;
+
   $("#print-area").innerHTML = `
     <div class="pcal">
       <div class="pcal-head">
         <div class="t">
-          <h1>رزنامة «١٨٠ يوم» — ${p.year}</h1>
+          <h1>${title}</h1>
           <p>${esc(p.full_name || "")}${p.full_name ? " · " : ""}${worktypeLabel(p.work_type)} · الهدف: ${p.target_days} يوم عمل</p>
         </div>
         <img class="appicon" src="assets/brand/app-180-192.png" alt="" />
@@ -1007,7 +1089,8 @@ function printYearCalendar() {
         <span><i style="background:#eef1f6"></i>راحة أسبوعية</span>
         <span><i style="background:#fef3c7"></i>استئذان</span>
       </div>
-      <div class="pcal-months">${months}</div>
+      <div class="pcal-months${single ? " single" : ""}">${months}</div>
+      ${details}
       <div class="pcal-foot">
         <div class="d">
           رزنامة إرشادية وليست مستنداً رسمياً — طُبعت في ${fmtDateFull(todayISO)}.<br>
@@ -1036,8 +1119,19 @@ function printYearCalendar() {
   window.print();
 }
 
-$("#onb-print").onclick = printYearCalendar;
-$("#cal-print").onclick = printYearCalendar;
+// Print options: full year or a specific month.
+function openPrintSheet(defaultMonth) {
+  const sel = $("#print-month-sel");
+  sel.innerHTML = Array.from({ length: 12 }, (_, m) =>
+    `<option value="${m}">${new Date(state.profile.year, m, 1).toLocaleDateString("ar-KW", { month: "long" })} ${state.profile.year}</option>`
+  ).join("");
+  sel.value = String(defaultMonth);
+  openSheet("#sheet-print");
+}
+$("#onb-print").onclick = () => openPrintSheet(toDate(todayISO).getMonth());
+$("#cal-print").onclick = () => openPrintSheet(calMonth ?? toDate(todayISO).getMonth());
+$("#print-year-btn").onclick = () => { closeSheets(); printCalendar(null); };
+$("#print-month-btn").onclick = () => { const m = Number($("#print-month-sel").value); closeSheets(); printCalendar(m); };
 
 /* ============================================================ boot */
 

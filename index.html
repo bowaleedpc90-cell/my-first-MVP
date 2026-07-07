@@ -400,7 +400,7 @@
       </form>
       <div id="holiday-list" class="mt"></div>
       <button class="btn btn-ghost" type="button" data-close>إغلاق</button>
-      <p class="note">العطل الرسمية لدولة الكويت 2026 مُحمّلة مسبقاً. التواريخ الهجرية تخضع لتأكيد الرؤية الشرعية.</p>
+      <p class="note">العطل الرسمية لدولة الكويت مُحمّلة مسبقاً وتتحدّث تلقائياً مع بداية كل سنة. التواريخ الهجرية تُحسب بتقويم أم القرى وتخضع لتأكيد الرؤية الشرعية — عدّلها عند صدور الإعلان الرسمي.</p>
     </div>
   </div>
 
@@ -448,7 +448,22 @@
     </form>
   </div>
 
-  <!-- printable year calendar (populated on demand, print-only) -->
+  <!-- print options -->
+  <div class="sheet" id="sheet-print">
+    <div class="sheet-panel">
+      <h3>طباعة الرزنامة</h3>
+      <p class="muted">العطل الرسمية والإجازات تظهر مظللة بالألوان في المطبوع.</p>
+      <button type="button" class="btn btn-primary" id="print-year-btn">🗓️ طباعة السنة كاملة</button>
+      <div class="field mt">
+        <label for="print-month-sel">أو اختر شهراً محدداً</label>
+        <select id="print-month-sel"></select>
+      </div>
+      <button type="button" class="btn btn-ghost" id="print-month-btn">🖨️ طباعة الشهر المحدد</button>
+      <button type="button" class="btn btn-ghost" data-close>إلغاء</button>
+    </div>
+  </div>
+
+  <!-- printable calendar (populated on demand, print-only) -->
   <div id="print-area" aria-hidden="true"></div>
 
   <script type="module" src="js/app.js"></script>
