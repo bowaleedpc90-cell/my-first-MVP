@@ -151,6 +151,7 @@
         <span><i class="dot leave"></i> إجازة</span>
         <span><i class="dot perm"></i> استئذان</span>
       </div>
+      <button type="button" class="btn btn-ghost mt" id="cal-print">🖨️ طباعة رزنامة السنة</button>
     </section>
 
     <!-- ============================= SIMULATOR ============================= -->
@@ -271,13 +272,19 @@
           <select id="onb-leave-type"></select>
         </div>
         <div class="field">
-          <label>حدد الفترة (اختر يوم البداية ثم يوم النهاية)</label>
-          <div class="rcal" id="onb-rcal"></div>
-          <p class="rcal-summary" id="onb-rcal-summary"></p>
+          <label id="onb-rcal-lbl">الفترة</label>
+          <button type="button" class="rcal-toggle" id="onb-rcal-toggle" aria-expanded="false" aria-labelledby="onb-rcal-lbl">
+            <span aria-hidden="true">📅</span>
+            <b id="onb-rcal-label">اضغط لاختيار الفترة</b>
+            <i id="onb-rcal-chev" aria-hidden="true">▾</i>
+          </button>
+          <div class="rcal" id="onb-rcal" hidden></div>
+          <p class="rcal-summary" id="onb-rcal-summary" hidden></p>
         </div>
         <p class="preview" id="onb-leave-preview"></p>
         <button type="button" class="btn btn-ghost" id="onb-leave-add">＋ أضف للسجل</button>
         <div id="onb-leave-list" class="mt"></div>
+        <button type="button" class="btn btn-ghost" id="onb-print" hidden>🖨️ طباعة الرزنامة</button>
         <button type="button" class="btn btn-primary" id="onb-next2">التالي ←</button>
         <button type="button" class="btn btn-ghost" id="onb-back">رجوع</button>
         <p class="note">ما عندك إجازات سابقة؟ اضغط «التالي» مباشرة.</p>
@@ -467,6 +474,9 @@
       <p class="note">الهدف الافتراضي 180 يوم للإداري وليس قاعدة ثابتة — عدّله حسب نوع دوامك وجهتك.</p>
     </form>
   </div>
+
+  <!-- printable year calendar (populated on demand, print-only) -->
+  <div id="print-area" aria-hidden="true"></div>
 
   <script type="module" src="js/app.js"></script>
 </body>
