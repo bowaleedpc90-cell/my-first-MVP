@@ -314,6 +314,18 @@ function render() {
   $("#s-perm-count").textContent = `${s.permMonthCount} / ${s.monthlyPermCount} مرات`;
 
   renderAlerts(s);
+  updateAppBadge(s);
+}
+
+// App-icon badge (installed PWA, iOS 16.4+/Android/desktop): shows the days
+// remaining to the target; cleared once the target is achieved. Best-effort —
+// unsupported platforms just skip it.
+function updateAppBadge(s) {
+  if (!("setAppBadge" in navigator)) return;
+  const p = s.achieved || s.remainingToTarget <= 0
+    ? navigator.clearAppBadge()
+    : navigator.setAppBadge(s.remainingToTarget);
+  p.catch(() => { /* not installed / not permitted — ignore */ });
 }
 
 function trim(n) { return Number.isInteger(n) ? n : Number(n.toFixed(1)); }
@@ -1143,6 +1155,21 @@ applyLock();
 render();
 renderLog();
 startIntroThenOnboarding();
+
+// App-shortcut deep links (long-press on the installed icon):
+// ?view=calendar|sim|log|more opens that tab, ?action=add-leave opens the
+// quick-add sheet. Skipped during first-run onboarding; URL cleaned so a
+// reload doesn't re-trigger.
+(function handleShortcutParams() {
+  const params = new URLSearchParams(location.search);
+  const view = params.get("view");
+  const action = params.get("action");
+  if (!view && !action) return;
+  history.replaceState(null, "", location.pathname);
+  if (!state.onboarded) return;
+  if (view && ["home", "calendar", "sim", "log", "more"].includes(view)) switchView(view);
+  if (action === "add-leave") openLeaveSheet({ type: "annual", title: "إضافة إجازة" });
+})();
 
 // Offline support for the installed app.
 if ("serviceWorker" in navigator) {
