@@ -15,5 +15,28 @@
     { "src": "assets/brand/app-180-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "assets/brand/app-180-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "assets/brand/app-180-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "تسجيل إجازة",
+      "short_name": "إجازة",
+      "description": "سجّل إجازة أو غياباً مباشرة",
+      "url": "/my-first-MVP/?action=add-leave",
+      "icons": [{ "src": "assets/brand/app-180-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "محاكي الإجازة",
+      "short_name": "المحاكي",
+      "description": "جرّب أثر إجازة قادمة على رصيدك",
+      "url": "/my-first-MVP/?view=sim",
+      "icons": [{ "src": "assets/brand/app-180-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "التقويم",
+      "short_name": "التقويم",
+      "description": "رزنامة السنة بالإجازات والعطل",
+      "url": "/my-first-MVP/?view=calendar",
+      "icons": [{ "src": "assets/brand/app-180-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
   ]
 }
