@@ -79,7 +79,7 @@
     <section class="view" id="view-home">
       <div class="card">
         <div class="greeting" id="greeting">مرحباً بك 👋</div>
-        <div class="year">السنة: <span id="year-label"></span> · <span id="worktype-label"></span></div>
+        <div class="year">السنة: <span id="year-label"></span></div>
 
         <div class="ring-wrap">
           <div class="ring">
@@ -409,42 +409,17 @@
     <form class="sheet-panel" id="form-settings">
       <h3>الإعدادات</h3>
       <div class="field"><label for="set-name">الاسم</label><input type="text" id="set-name" placeholder="اسمك الكريم" /></div>
-      <div class="field">
-        <label for="set-worktype">نوع الدوام</label>
-        <select id="set-worktype">
-          <option value="admin_morning">إداري صباحي</option>
-          <option value="admin_evening">إداري مسائي</option>
-          <option value="shifts">نوبات</option>
-          <option value="teaching">تعليمي</option>
-          <option value="custom">مخصص</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="set-ministry">الجهة / التصنيف</label>
-        <select id="set-ministry">
-          <option value="general">إداري عام</option>
-          <option value="education">وزارة التربية</option>
-          <option value="health">الصحة</option>
-          <option value="shifts">نوبات</option>
-          <option value="other">أخرى</option>
-        </select>
-      </div>
       <div class="field-row">
-        <div class="field"><label for="set-target">الهدف السنوي</label><input type="number" id="set-target" min="1" max="366" /></div>
         <div class="field"><label for="set-year">السنة</label><input type="number" id="set-year" min="2024" max="2100" /></div>
-      </div>
-      <div class="field">
-        <label>أيام الراحة الأسبوعية</label>
-        <div class="chips" id="set-weekend"></div>
+        <div class="field"><label for="set-hours">ساعات الدوام اليومي</label><input type="number" id="set-hours" min="1" max="12" step="0.5" /></div>
       </div>
       <div class="field-row">
-        <div class="field"><label for="set-hours">ساعات الدوام اليومي</label><input type="number" id="set-hours" min="1" max="12" step="0.5" /></div>
         <div class="field"><label for="set-perm-hours">حد الاستئذان (ساعة/شهر)</label><input type="number" id="set-perm-hours" min="0" max="60" step="0.5" /></div>
+        <div class="field"><label for="set-perm-count">حد مرات الاستئذان (مرة/شهر)</label><input type="number" id="set-perm-count" min="0" max="30" /></div>
       </div>
-      <div class="field"><label for="set-perm-count">حد مرات الاستئذان (مرة/شهر)</label><input type="number" id="set-perm-count" min="0" max="30" /></div>
       <button class="btn btn-primary" type="submit">حفظ الإعدادات</button>
       <button class="btn btn-ghost" type="button" data-close>إغلاق</button>
-      <p class="note">الهدف الافتراضي 180 يوم للإداري وليس قاعدة ثابتة — عدّله حسب نوع دوامك وجهتك.</p>
+      <p class="note">الهدف 180 يوم عمل وأيام الراحة الجمعة والسبت — ثابتة وفق نظام الموظف الإداري الحكومي.</p>
     </form>
   </div>
 

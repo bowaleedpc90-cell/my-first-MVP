@@ -81,7 +81,6 @@ function kuwaitHolidays(year) {
   return out;
 }
 
-const WORKTYPE_TARGET = { admin_morning: 180, admin_evening: 180, teaching: 135 };
 
 /* ============================================================ state */
 
@@ -286,7 +285,6 @@ function render() {
   // greeting
   $("#greeting").textContent = p.full_name ? `مرحباً، ${p.full_name} 👋` : "مرحباً بك 👋";
   $("#year-label").textContent = p.year;
-  $("#worktype-label").textContent = worktypeLabel(p.work_type);
 
   // banner
   const titleEl = $("#zone-title"), hintEl = $("#zone-hint");
@@ -329,10 +327,6 @@ function updateAppBadge(s) {
 }
 
 function trim(n) { return Number.isInteger(n) ? n : Number(n.toFixed(1)); }
-
-function worktypeLabel(w) {
-  return ({ admin_morning: "إداري صباحي", admin_evening: "إداري مسائي", shifts: "نوبات", teaching: "تعليمي", custom: "مخصص" })[w] || "—";
-}
 
 function renderAlerts(s) {
   const box = $("#alerts");
@@ -656,7 +650,6 @@ function buildReport() {
   const rows = [
     ["الاسم", p.full_name || "—"],
     ["السنة", p.year],
-    ["نوع الدوام", worktypeLabel(p.work_type)],
     ["الهدف السنوي", `${p.target_days} يوم`],
     ["الأيام المنجزة", `${s.completedDays} يوم (${s.percent}%)`],
     ["المطلوب للهدف", `${s.remainingToTarget} يوم`],
@@ -752,51 +745,23 @@ $("#form-holiday").onsubmit = (e) => {
 
 /* ============================================================ SETTINGS + weekend chips */
 
-function renderWeekendChips(containerId, selected) {
-  const box = $(containerId);
-  box.innerHTML = "";
-  WEEKDAYS.forEach((d) => {
-    const chip = document.createElement("button");
-    chip.type = "button"; chip.className = "chip" + (selected.includes(d.key) ? " on" : "");
-    chip.textContent = d.label; chip.dataset.key = d.key;
-    chip.onclick = () => { chip.classList.toggle("on"); };
-    box.appendChild(chip);
-  });
-}
-function readWeekendChips(containerId) {
-  return [...$(containerId).querySelectorAll(".chip.on")].map((c) => c.dataset.key);
-}
-
 $("#btn-settings").onclick = openSettings;
 $("#m-settings").onclick = openSettings;
 function openSettings() {
   const p = state.profile;
   $("#set-name").value = p.full_name;
-  $("#set-worktype").value = p.work_type;
-  $("#set-ministry").value = p.ministry_type;
-  $("#set-target").value = p.target_days;
   $("#set-year").value = p.year;
   $("#set-hours").value = p.daily_work_hours;
   $("#set-perm-hours").value = p.monthly_perm_hours;
   $("#set-perm-count").value = p.monthly_perm_count;
-  renderWeekendChips("#set-weekend", p.weekend_days);
   openSheet("#sheet-settings");
 }
-$("#set-worktype").onchange = () => {
-  const t = WORKTYPE_TARGET[$("#set-worktype").value];
-  if (t) $("#set-target").value = t;
-};
 $("#form-settings").onsubmit = (e) => {
   e.preventDefault();
-  const wk = readWeekendChips("#set-weekend");
   const prevYear = state.profile.year;
   Object.assign(state.profile, {
     full_name: $("#set-name").value.trim(),
-    work_type: $("#set-worktype").value,
-    ministry_type: $("#set-ministry").value,
-    target_days: Number($("#set-target").value) || 180,
     year: Number($("#set-year").value) || state.profile.year,
-    weekend_days: wk.length ? wk : ["friday", "saturday"],
     daily_work_hours: Number($("#set-hours").value) || 7,
     monthly_perm_hours: Number($("#set-perm-hours").value) || 0,
     monthly_perm_count: Number($("#set-perm-count").value) || 0,
@@ -1089,7 +1054,7 @@ function printCalendar(monthIdx = null) {
       <div class="pcal-head">
         <div class="t">
           <h1>${title}</h1>
-          <p>${esc(p.full_name || "")}${p.full_name ? " · " : ""}${worktypeLabel(p.work_type)} · الهدف: ${p.target_days} يوم عمل</p>
+          <p>${esc(p.full_name || "")}${p.full_name ? " · " : ""}الهدف: ${p.target_days} يوم عمل</p>
         </div>
         <img class="appicon" src="assets/brand/app-180-192.png" alt="" />
       </div>
