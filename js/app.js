@@ -674,7 +674,7 @@ $("#rep-share").onclick = async () => {
   const { rows } = buildReport();
   const text = "📊 تقرير متابعة «١٨٠ يوم»\n" +
     rows.map(([k, v]) => `• ${k}: ${v}`).join("\n") +
-    "\n\nتقرير إرشادي وليس مستنداً رسمياً.\nتطوير X Star Software — xstarkw.com";
+    "\n\nتقرير إرشادي وليس مستنداً رسمياً.\nتطوير X Star Software — instagram.com/xstar.kw";
   try {
     if (navigator.share) await navigator.share({ title: "تقرير ١٨٠ يوم", text });
     else { await navigator.clipboard.writeText(text); toast("تم نسخ الملخص النصي 📋"); }
@@ -1075,7 +1075,7 @@ function printCalendar(monthIdx = null) {
       <div class="pcal-foot">
         <div class="d">
           رزنامة إرشادية وليست مستنداً رسمياً — طُبعت في ${fmtDateFull(todayISO)}.<br>
-          تطوير X Star Software · xstarkw.com
+          تطوير X Star Software · instagram.com/xstar.kw
         </div>
         <img src="assets/brand/logo-horizontal.png" alt="X Star Software" />
       </div>

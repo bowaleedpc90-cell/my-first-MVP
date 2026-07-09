@@ -75,7 +75,7 @@ docs/project-proposal.md  Original bilingual proposal
 
 ## 🏢 Developed by
 
-**X Star Software** — [xstarkw.com](https://xstarkw.com)
+**X Star Software** — [xstarkw.com](https://xstarkw.com) · [@xstar.kw on Instagram](https://instagram.com/xstar.kw)
 
 ## ⚠️ Disclaimer
 
